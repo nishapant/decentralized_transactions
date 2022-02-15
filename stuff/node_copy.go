@@ -57,33 +57,33 @@ func main() {
 
 	self_node := m[node_name]
 
-	// thread 1
-	serv_port := ":" + self_node.port_num
+	// thread 1 - accepting connections
+	// serv_port := ":" + self_node.port_num
 
-	ln, err := net.Listen("tcp", serv_port)
+	// ln, err := net.Listen("tcp", serv_port)
 
-	print()
+	// handle_err(err)
 
-	handle_err(err)
+	// // closes the listener
+	// defer ln.Close()
 
-	// closes the listener
-	defer ln.Close()
-
-	for {
-		conn, err := ln.Accept()
-		handle_err(err)
-		print(conn)
-		// go handle_receive(conn)
-	}
+	// for {
+	// 	conn, err := ln.Accept()
+	// 	handle_err(err)
+	// 	print(conn)
+	// 	// go handle_receive(conn)
+	// }
 
 	// handle any incoming connections
 
-	// thread 2
+	// thread 2 - sending connections
 	// for k, v := range m {
 	// 	if k != node_name {
 	// 		conn, err = net.Dial("tcp", strings.Join([]string{v.host_name, v.port_num}, ":"))
 	// 	}
 	// }
+
+	conn, err = net.Dial("tcp", strings.Join([]string{"sp21-cs425-g70-01.cs.illinois.edu", "8080"}, ":"))
 }
 
 func handle_err(err error) {
