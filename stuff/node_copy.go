@@ -55,7 +55,7 @@ func main() {
 
 	fmt.Println(m)
 
-	self_node := m[node_name]
+	// self_node := m[node_name]
 
 	// thread 1 - accepting connections
 	// serv_port := ":" + self_node.port_num
@@ -83,7 +83,10 @@ func main() {
 	// 	}
 	// }
 
-	conn, err = net.Dial("tcp", strings.Join([]string{"sp21-cs425-g70-01.cs.illinois.edu", "8080"}, ":"))
+	conn, err := net.Dial("tcp", strings.Join([]string{"sp21-cs425-g70-01.cs.illinois.edu", "8080"}, ":"))
+
+	handle_err(err)
+	print(conn)
 }
 
 func handle_err(err error) {
