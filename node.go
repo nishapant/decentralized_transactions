@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"strconv"
@@ -33,7 +32,7 @@ func main() {
 
 	for i := 1; i <= nodes_num; i++ {
 		node_info := strings.Split(content3[i], " ")
-		
+
 		new_node := node{
 			node_name: node_info[0],
 			host_name: node_info[1],
@@ -49,11 +48,12 @@ func main() {
 
 	// thread 1
 	serv_port := ":" + self_node.port_num
-	ln, err := net.Listen("tcp", serv_port)
+	print(serv_port)
+	ln, err := net.Listen("tcp", ":8080")
 	handle_err(err)
 
-	// closes the listener, after the function returns 
-	defer ln.Close()
+	// closes the listener, after the function returns
+	// defer ln.Close()
 
 	for {
 		conn, err := ln.Accept()
