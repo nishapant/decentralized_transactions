@@ -20,30 +20,20 @@ func main() {
 	node_name := args[0]
 	config_file := args[1]
 
-	print(node_name)
-
 	content, err := os.ReadFile(config_file)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(string(content))
+	handle_err(err)
 
 	content2 := string(content)
-
 	content3 := strings.Split(content2, "\n")
 
 	fmt.Println(content3[0])
 	nodes_num, err := strconv.Atoi(content3[0])
-	// fmt.Println(string(nodes_num))
 
 	m := make(map[string]node)
 
 	for i := 1; i <= nodes_num; i++ {
 		node_info := strings.Split(content3[i], " ")
-		// port, port_err := strconv.Atoi(node_info[2])
-		// if port_err != nil {
-		// 	log.Fatal(port_err)
-		// }
+		
 		new_node := node{
 			node_name: node_info[0],
 			host_name: node_info[1],
@@ -59,14 +49,10 @@ func main() {
 
 	// thread 1
 	serv_port := ":" + self_node.port_num
-
 	ln, err := net.Listen("tcp", serv_port)
-
-	print()
-
 	handle_err(err)
 
-	// closes the listener
+	// closes the listener, after the function returns 
 	defer ln.Close()
 
 	for {
