@@ -83,10 +83,16 @@ func main() {
 	// 	}
 	// }
 
-	conn, err := net.Dial("tcp", strings.Join([]string{"sp21-cs425-g70-01.cs.illinois.edu", "8080"}, ":"))
+	// conn, err = net.Dial("tcp", "sp21-cs425-g70-01.cs.illinois.edu:8080")
+
+	// handle_err(err)
+	// print(conn)
+
+	conn, err := net.Dial("tcp", "sp22-cs425-g70-01.cs.illinois.edu:8080")
 
 	handle_err(err)
-	print(conn)
+
+	fmt.Fprintf(conn, "%s\n", node_name)
 }
 
 func handle_err(err error) {
