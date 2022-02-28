@@ -86,11 +86,11 @@ func main() {
 
 	print("going to recieve")
 	// Server
-	recieve_conn_reqs(self_node.port_num)
+	go recieve_conn_reqs(self_node.port_num)
 
 	print("going to send")
 	// Clients
-	send_conn_reqs(self_node.node_name)
+	go send_conn_reqs(self_node.node_name)
 
 	// 2) Transactions
 
@@ -142,6 +142,8 @@ func recieve_conn_reqs(port string) {
 	handle_err(err)
 
 	print("in recieve conn reqs\n")
+	print(total_conns)
+	print("\n")
 
 	for curr_conns.curr_conns < total_conns {
 		conn, err := ln.Accept()
@@ -170,6 +172,9 @@ func wait_for_connections(conn net.Conn) {
 	curr_conns.mutex.Unlock()
 
 	print("passed mutex...\n")
+	print(curr_conns.curr_conns)
+	print("curr cons ^\n")
+
 	for curr_conns.curr_conns != total_conns {
 
 	}
