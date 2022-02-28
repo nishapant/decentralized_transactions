@@ -136,6 +136,8 @@ func send_req(host string, port string) {
 		print(conn)
 	}
 
+	print("outside send conn for loop\n")
+
 }
 
 func recieve_conn_reqs(port string) {
@@ -157,10 +159,14 @@ func recieve_conn_reqs(port string) {
 		go wait_for_connections(conn)
 	}
 
-	wg.Wait()
+	print("out of for loop\n")
 
 	// Close the listener
 	defer ln.Close()
+
+	print("closed listener\n")
+
+	wg.Wait()
 }
 
 func wait_for_connections(conn net.Conn) {
