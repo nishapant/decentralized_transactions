@@ -92,8 +92,7 @@ func main() {
 	// Clients
 	go send_conn_reqs(self_node.node_name)
 
-	// 2) Transactions
-
+	wg.Wait()
 }
 
 /////// 1) CONNECTIONS ///////
@@ -187,11 +186,11 @@ func wait_for_connections(conn net.Conn) {
 	handle_transactions(conn)
 }
 
+////// 2) Transactions  ///////
+
 func handle_transactions(conn net.Conn) {
 
 }
-
-////// 2) Transactions  ///////
 
 ////// Error Handling ///////
 
