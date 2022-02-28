@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 var wg sync.WaitGroup
@@ -24,17 +25,19 @@ type node struct {
 }
 
 // THREADING
-var total_conns = 0
-var curr_conns = 0
 
 // CONNECTIONS
+// when done establishing connection, add a 1-3 second timeout to let all the nodes establish connections to each other
+// don't worry about multicast
 
-type nodes_ready struct {
-	mutex           sync.Mutex
-	all_nodes_ready bool
+var total_conns = 0
+
+type curr_conns_mutex struct {
+	mutex      sync.Mutex
+	curr_conns int
 }
 
-var ready_flag = nodes_ready{all_nodes_ready: false}
+var curr_conns = curr_conns_mutex{curr_conns: 0}
 
 // TRANSACTIONS
 
@@ -78,7 +81,7 @@ func main() {
 
 	// 1) Connections
 	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
-	total_conns = total_nodes - 1
+	total_conns = (total_nodes - 1) * 2
 	self_node := node_info_map[node_name]
 
 	print("going to recieve")
@@ -121,10 +124,8 @@ func send_req(host string, port string) {
 		ip := host + ":" + port
 		conn, err := net.Dial("tcp", ip)
 
-		curr_conns += 1
-
 		// Use preexisting thread to handle new connection
-		handle_connection(conn)
+		wait_for_connections(conn)
 
 		if err != nil {
 			continue
@@ -141,14 +142,12 @@ func recieve_conn_reqs(port string) {
 
 	print("in recieve conn reqs")
 
-	for curr_conns < total_conns {
+	for curr_conns.curr_conns < total_conns {
 		conn, err := ln.Accept()
 		handle_err(err)
 
-		curr_conns += 1
-
 		// Start thread for connection
-		go handle_connection(conn)
+		go wait_for_connections(conn)
 	}
 
 	wg.Wait()
@@ -157,15 +156,28 @@ func recieve_conn_reqs(port string) {
 	defer ln.Close()
 }
 
-func handle_connection(conn net.Conn) {
-	// Check if all connections are ready
-	// ready_flag.mutex.Lock()
-	// // use a mutex
-	// for !ready_flag.all_nodes_ready {
+func wait_for_connections(conn net.Conn) {
+	// easiest thing to do: keep two connections between two nodes -> one for listening, other for writing
+	// Increment current number of connections
 
-	// }
+	curr_conns.mutex.Lock()
+	curr_conns.curr_conns += 1
+	print(curr_conns.curr_conns)
+	curr_conns.mutex.Unlock()
 
-	// ready_flag.mutex.Unlock()
+	for curr_conns.curr_conns != total_conns {
+
+	}
+
+	sec := 5
+	print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...")
+
+	time.Sleep(5 * time.Second)
+
+	handle_transactions(conn)
+}
+
+func handle_transactions(conn net.Conn) {
 
 }
 
