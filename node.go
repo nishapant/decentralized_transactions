@@ -176,7 +176,7 @@ func wait_for_connections(conn net.Conn) {
 	print(curr_conns.curr_conns)
 	print("curr cons\n")
 
-	for curr_conns.curr_conns <= total_conns {
+	for curr_conns.curr_conns < total_conns {
 		time.Sleep(20 * time.Millisecond)
 	}
 
