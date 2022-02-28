@@ -82,6 +82,7 @@ func main() {
 	// 1) Connections
 	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
 	total_conns = (total_nodes - 1) * 2
+	print("total_conns" + strconv.Itoa(total_conns))
 	self_node := node_info_map[node_name]
 
 	wg.Add(2)
@@ -151,7 +152,7 @@ func recieve_conn_reqs(port string) {
 		handle_err(err)
 
 		print("established connection in recieve conn req\n")
-		print(conn)
+
 		// Start thread for connection
 		go wait_for_connections(conn)
 	}
@@ -169,15 +170,14 @@ func wait_for_connections(conn net.Conn) {
 
 	curr_conns.mutex.Lock()
 	curr_conns.curr_conns += 1
-	print(curr_conns.curr_conns)
 	curr_conns.mutex.Unlock()
 
 	print("passed mutex...\n")
 	print(curr_conns.curr_conns)
-	print("curr cons ^\n")
+	print("curr cons\n")
 
-	for curr_conns.curr_conns != total_conns {
-
+	for curr_conns.curr_conns <= total_conns {
+		time.Sleep(20 * time.Millisecond)
 	}
 
 	sec := 5
