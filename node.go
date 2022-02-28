@@ -52,7 +52,7 @@ func main() {
 	node_name := args[0]
 	config_file := args[1]
 
-	print("finished arg parsing")
+	print("finished arg parsing\n")
 
 	// File Parsing
 	content, err := os.ReadFile(config_file)
@@ -119,10 +119,11 @@ func send_conn_reqs(self_name string) {
 func send_req(host string, port string) {
 	var conn net.Conn
 
-	print("in send req")
+	print("in send req\n")
 	for conn == nil {
 		ip := host + ":" + port
 		conn, err := net.Dial("tcp", ip)
+		print("established connection in send req\n")
 
 		// Use preexisting thread to handle new connection
 		wait_for_connections(conn)
@@ -140,12 +141,14 @@ func recieve_conn_reqs(port string) {
 	ln, err := net.Listen("tcp", serv_port)
 	handle_err(err)
 
-	print("in recieve conn reqs")
+	print("in recieve conn reqs\n")
 
 	for curr_conns.curr_conns < total_conns {
 		conn, err := ln.Accept()
 		handle_err(err)
 
+		print("established connection in recieve conn req\n")
+		print(conn)
 		// Start thread for connection
 		go wait_for_connections(conn)
 	}
@@ -159,12 +162,14 @@ func recieve_conn_reqs(port string) {
 func wait_for_connections(conn net.Conn) {
 	// easiest thing to do: keep two connections between two nodes -> one for listening, other for writing
 	// Increment current number of connections
+	print("At beginning of wait for connections...\n")
 
 	curr_conns.mutex.Lock()
 	curr_conns.curr_conns += 1
 	print(curr_conns.curr_conns)
 	curr_conns.mutex.Unlock()
 
+	print("passed mutex...\n")
 	for curr_conns.curr_conns != total_conns {
 
 	}
