@@ -84,6 +84,8 @@ func main() {
 	total_conns = (total_nodes - 1) * 2
 	self_node := node_info_map[node_name]
 
+	wg.Add(2)
+
 	print("going to recieve")
 	// Server
 	go recieve_conn_reqs(self_node.port_num)
