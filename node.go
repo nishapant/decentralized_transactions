@@ -135,11 +135,12 @@ func send_req(host string, port string) {
 		print("AFTER WAIT FOR CONNECTION...\n")
 		print(conn)
 		print("\n")
-		break
 
-		// if err != nil {
-		// 	continue
-		// }
+		if err != nil {
+			continue
+		} else {
+			break
+		}
 		// print("after wait for connections...\n")
 	}
 
