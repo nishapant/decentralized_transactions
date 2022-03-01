@@ -78,9 +78,9 @@ func main() {
 		node_info_map[node_info[0]] = new_node
 	}
 
-	print("node info map:")
-	print(node_info_map)
-	print("\n")
+	// print("node info map:")
+	// print(node_info_map)
+	// print("\n")
 
 	// Connections
 	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
@@ -89,11 +89,11 @@ func main() {
 	self_node := node_info_map[node_name]
 	wg.Add(2)
 
-	print("going to recieve")
+	// print("going to recieve\n")
 	// Server
 	go recieve_conn_reqs(self_node.port_num)
 
-	print("going to send")
+	// print("going to send\n")
 	// Clients
 	go send_conn_reqs(self_node.node_name)
 
@@ -106,7 +106,7 @@ func main() {
 func send_conn_reqs(self_name string) {
 	// wg.Add(2)
 
-	print("in send conn reqs")
+	// print("in send conn reqs")
 	for name, info := range node_info_map {
 		if name != self_name {
 			host := info.host_name
@@ -123,18 +123,24 @@ func send_conn_reqs(self_name string) {
 func send_req(host string, port string) {
 	var conn net.Conn
 
-	print("in send req\n")
+	// print("in send req\n")
 	for conn == nil {
 		ip := host + ":" + port
 		conn, err := net.Dial("tcp", ip)
+		handle_err(err)
 		print("established connection in send req\n")
 
 		// Use preexisting thread to handle new connection
 		wait_for_connections(conn)
+		print("AFTER WAIT FOR CONNECTION...\n")
+		print(conn)
+		print("\n")
+		break
 
-		if err != nil {
-			continue
-		}
+		// if err != nil {
+		// 	continue
+		// }
+		// print("after wait for connections...\n")
 	}
 
 	print("outside send conn for loop\n")
@@ -153,6 +159,7 @@ func recieve_conn_reqs(port string) {
 }
 
 func recieve_req(port string) {
+	print("recieving...\n")
 	serv_port := ":" + port
 	ln, err := net.Listen("tcp", serv_port)
 	handle_err(err)
@@ -164,6 +171,54 @@ func recieve_req(port string) {
 
 	defer ln.Close()
 }
+
+func wait_for_connections(conn net.Conn) {
+	// easiest thing to do: keep two connections between two nodes -> one for listening, other for writing
+	// Increment current number of connections
+	print("At beginning of wait for connections...\n")
+
+	curr_conns.mutex.Lock()
+	curr_conns.curr_conns += 1
+	curr_conns.mutex.Unlock()
+
+	// print("passed mutex...\n")
+	print(curr_conns.curr_conns)
+	// print(" curr cons\n")
+
+	for curr_conns.curr_conns < total_conns {
+		time.Sleep(20 * time.Millisecond)
+	}
+
+	sec := 5
+	print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...\n")
+
+	// Sleep for a few seconds to make sure all the other nodes have established connections
+	time.Sleep(5 * time.Second)
+
+	// Move to handling transactions
+	handle_transactions(conn)
+
+	print("went past the return...?\n")
+}
+
+////// 2) Transactions  ///////
+
+func handle_transactions(conn net.Conn) {
+	print("in handle transactions\n")
+	print(conn)
+	print()
+}
+
+////// Error Handling ///////
+
+func handle_err(err error) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
+}
+
+/////// Extraneous //////
 
 // func recieve_conn_reqs(port string) {
 // 	serv_port := ":" + port
@@ -193,47 +248,3 @@ func recieve_req(port string) {
 
 // 	wg.Wait()
 // }
-
-func wait_for_connections(conn net.Conn) {
-	// easiest thing to do: keep two connections between two nodes -> one for listening, other for writing
-	// Increment current number of connections
-	print("At beginning of wait for connections...\n")
-
-	curr_conns.mutex.Lock()
-	curr_conns.curr_conns += 1
-	curr_conns.mutex.Unlock()
-
-	print("passed mutex...\n")
-	print(curr_conns.curr_conns)
-	print(" curr cons\n")
-
-	for curr_conns.curr_conns < total_conns {
-		time.Sleep(20 * time.Millisecond)
-	}
-
-	sec := 5
-	print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...\n")
-
-	// Sleep for a few seconds to make sure all the other nodes have established connections
-	time.Sleep(5 * time.Second)
-
-	// Move to handling transactions
-	handle_transactions(conn)
-}
-
-////// 2) Transactions  ///////
-
-func handle_transactions(conn net.Conn) {
-	print("in handle transactions\n")
-	print(conn)
-	print()
-}
-
-////// Error Handling ///////
-
-func handle_err(err error) {
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(1)
-	}
-}
