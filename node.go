@@ -44,7 +44,7 @@ var curr_conns = curr_conns_mutex{curr_conns: 0}
 func main() {
 	// Argument parsing
 	if len(os.Args) < 3 {
-		print("Incorrect number of Arguments!")
+		print("Incorrect number of Arguments!\n")
 		os.Exit(1)
 	}
 
@@ -61,6 +61,7 @@ func main() {
 	content2 := string(content)
 	content3 := strings.Split(content2, "\n")
 
+	// Node creation
 	total_nodes, err := strconv.Atoi(content3[0])
 	handle_err(err)
 
@@ -77,15 +78,16 @@ func main() {
 		node_info_map[node_info[0]] = new_node
 	}
 
+	print("node info map:")
 	print(node_info_map)
+	print("\n")
 
-	// 1) Connections
+	// Connections
 	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
 	total_conns = (total_nodes - 1) * 2
 	print("total_conns" + strconv.Itoa(total_conns))
 	self_node := node_info_map[node_name]
-
-	wg.Add(2)
+	// wg.Add(2)
 
 	print("going to recieve")
 	// Server
@@ -94,15 +96,13 @@ func main() {
 	print("going to send")
 	// Clients
 	go send_conn_reqs(self_node.node_name)
-
-	wg.Wait()
 }
 
 /////// 1) CONNECTIONS ///////
 
 // Iterate through all the nodes that arent ourselves and establish a connection as client
 func send_conn_reqs(self_name string) {
-	wg.Add(total_conns)
+	// wg.Add(2)
 
 	print("in send conn reqs")
 	for name, info := range node_info_map {
@@ -113,7 +113,7 @@ func send_conn_reqs(self_name string) {
 		}
 	}
 
-	wg.Wait()
+	// wg.Wait()
 }
 
 // in a single thread
@@ -133,7 +133,6 @@ func send_req(host string, port string) {
 		if err != nil {
 			continue
 		}
-		print(conn)
 	}
 
 	print("outside send conn for loop\n")
@@ -141,33 +140,57 @@ func send_req(host string, port string) {
 }
 
 func recieve_conn_reqs(port string) {
+	print("recieving conn reqs...\n")
+	// wg.Add(2)
+
+	for i := 0; i < total_conns/2; i++ {
+		go recieve_req(port)
+	}
+	print("finished making threads for conn reqs...\n")
+	// wg.Wait()
+}
+
+func recieve_req(port string) {
 	serv_port := ":" + port
 	ln, err := net.Listen("tcp", serv_port)
 	handle_err(err)
 
-	print("in recieve conn reqs\n")
-	print(total_conns)
-	print("\n")
+	conn, err := ln.Accept()
+	handle_err(err)
 
-	for curr_conns.curr_conns < total_conns {
-		conn, err := ln.Accept()
-		handle_err(err)
+	wait_for_connections(conn)
 
-		print("established connection in recieve conn req\n")
-
-		// Start thread for connection
-		go wait_for_connections(conn)
-	}
-
-	print("out of for loop\n")
-
-	// Close the listener
 	defer ln.Close()
-
-	print("closed listener\n")
-
-	wg.Wait()
 }
+
+// func recieve_conn_reqs(port string) {
+// 	serv_port := ":" + port
+// 	ln, err := net.Listen("tcp", serv_port)
+// 	handle_err(err)
+
+// 	print("in recieve conn reqs\n")
+// 	print(total_conns)
+// 	print("\n")
+
+// 	for curr_conns.curr_conns < total_conns {
+// 		conn, err := ln.Accept()
+// 		handle_err(err)
+
+// 		print("established connection in recieve conn req\n")
+
+// 		// Start thread for connection
+// 		go wait_for_connections(conn)
+// 	}
+
+// 	print("out of for loop\n")
+
+// 	// Close the listener
+// 	defer ln.Close()
+
+// 	print("closed listener\n")
+
+// 	wg.Wait()
+// }
 
 func wait_for_connections(conn net.Conn) {
 	// easiest thing to do: keep two connections between two nodes -> one for listening, other for writing
@@ -180,24 +203,28 @@ func wait_for_connections(conn net.Conn) {
 
 	print("passed mutex...\n")
 	print(curr_conns.curr_conns)
-	print("curr cons\n")
+	print(" curr cons\n")
 
 	for curr_conns.curr_conns < total_conns {
 		time.Sleep(20 * time.Millisecond)
 	}
 
 	sec := 5
-	print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...")
+	print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...\n")
 
+	// Sleep for a few seconds to make sure all the other nodes have established connections
 	time.Sleep(5 * time.Second)
 
+	// Move to handling transactions
 	handle_transactions(conn)
 }
 
 ////// 2) Transactions  ///////
 
 func handle_transactions(conn net.Conn) {
-
+	print("in handle transactions\n")
+	print(conn)
+	print("\n")
 }
 
 ////// Error Handling ///////
