@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/heap"
 	"fmt"
 	"net"
 	"os"
@@ -36,6 +37,34 @@ var curr_conns = curr_conns_mutex{curr_conns: 0}
 var total_conns = 0 // Total number of connections we're expecting
 
 // TRANSACTIONS
+// Message that is sent between processes
+type message struct {
+	mutex          sync.Mutex
+	data           string
+	deliveredIds   []int // the process ids where the message is delivered
+	originId       int
+	proposals      []float64 // null or data
+	message_id     string    // hash
+	final_priority float64   // null when start
+}
+
+type heap_message struct {
+	message_id string // hash
+	index      int    // The index of the item in the heap.
+	priority   int
+	// The index is needed by update and is maintained by the heap.Interface methods.
+}
+
+type PriorityQueue []*heap_message
+
+// var pq = PriorityQueue
+
+type message_info_mutex struct {
+	mutex            sync.Mutex
+	message_info_map map[string]message
+}
+
+var message_info_map = message_info_mutex{message_info_map: make(map[string]message)}
 
 func main() {
 	time.Sleep(5 * time.Second)
@@ -75,15 +104,17 @@ func main() {
 		node_info_map[node_info[0]] = new_node
 	}
 
-	// print("node info map:")
-	// print(node_info_map)
-	// print("\n")
+	// Transaction setup
+	pq := make(PriorityQueue, 0)
+
+	heap.Init(&pq)
 
 	// Connections
 	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
 	total_conns = (total_nodes - 1) * 2
-	print("total_conns" + strconv.Itoa(total_conns))
+	// print("total_conns" + strconv.Itoa(total_conns))
 	self_node := node_info_map[node_name]
+
 	wg.Add(2)
 
 	// print("going to recieve\n")
@@ -206,6 +237,7 @@ func handle_transactions(conn net.Conn) {
 	print("in handle transactions\n")
 	print(conn)
 	print()
+
 }
 
 ////// Error Handling ///////
@@ -215,6 +247,45 @@ func handle_err(err error) {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
+}
+
+////// PRIORITIY QUEUE //////
+
+func (pq PriorityQueue) Len() int { return len(pq) }
+
+func (pq PriorityQueue) Less(i, j int) bool {
+	// We want Pop to give us the lowest
+	return pq[i].priority < pq[j].priority
+}
+
+func (pq PriorityQueue) Swap(i, j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+	pq[i].index = i
+	pq[j].index = j
+}
+
+func (pq *PriorityQueue) Push(x interface{}) {
+	n := len(*pq)
+	item := x.(*heap_message)
+	item.index = n
+	*pq = append(*pq, item)
+}
+
+func (pq *PriorityQueue) Pop() interface{} {
+	old := *pq
+	n := len(old)
+	item := old[n-1]
+	old[n-1] = nil  // avoid memory leak
+	item.index = -1 // for safety
+	*pq = old[0 : n-1]
+	return item
+}
+
+// update modifies the priority and value of an Item in the queue.
+func (pq *PriorityQueue) update(item *heap_message, message_id string, priority int) {
+	item.message_id = message_id
+	item.priority = priority
+	heap.Fix(pq, item.index)
 }
 
 /////// Extraneous //////
