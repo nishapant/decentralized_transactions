@@ -27,17 +27,13 @@ type node struct {
 // THREADING
 
 // CONNECTIONS
-// when done establishing connection, add a 1-3 second timeout to let all the nodes establish connections to each other
-// don't worry about multicast
-
-var total_conns = 0
-
 type curr_conns_mutex struct {
 	mutex      sync.Mutex
 	curr_conns int
 }
 
 var curr_conns = curr_conns_mutex{curr_conns: 0}
+var total_conns = 0 // Total number of connections we're expecting
 
 // TRANSACTIONS
 
@@ -127,12 +123,12 @@ func send_req(host string, port string) {
 	for conn == nil {
 		ip := host + ":" + port
 		conn, err := net.Dial("tcp", ip)
-		print("established connection in send req\n")
+		// print("established connection in send req\n")
 
-		// Use preexisting thread to handle new connection
-		print("AFTER WAIT FOR CONNECTION...\n")
-		print(conn)
-		print("\n")
+		// // Use preexisting thread to handle new connection
+		// print("AFTER WAIT FOR CONNECTION...\n")
+		// print(conn)
+		// print("\n")
 
 		if err != nil {
 			continue
@@ -195,12 +191,12 @@ func wait_for_connections(conn net.Conn) {
 	print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...\n")
 
 	// Sleep for a few seconds to make sure all the other nodes have established connections
+	// when done establishing connection, add a 1-3 second timeout to let all the nodes establish connections to each other
+	// don't worry about multicast
 	time.Sleep(5 * time.Second)
 
 	// Move to handling transactions
 	handle_transactions(conn)
-
-	print("went past the return...?\n")
 }
 
 ////// 2) Transactions  ///////
