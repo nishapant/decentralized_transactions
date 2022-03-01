@@ -127,11 +127,9 @@ func send_req(host string, port string) {
 	for conn == nil {
 		ip := host + ":" + port
 		conn, err := net.Dial("tcp", ip)
-		handle_err(err)
 		print("established connection in send req\n")
 
 		// Use preexisting thread to handle new connection
-		wait_for_connections(conn)
 		print("AFTER WAIT FOR CONNECTION...\n")
 		print(conn)
 		print("\n")
@@ -139,10 +137,13 @@ func send_req(host string, port string) {
 		if err != nil {
 			continue
 		} else {
+			wait_for_connections(conn)
 			break
 		}
 		// print("after wait for connections...\n")
 	}
+
+	// if error, then redial else wait for connections and break
 
 	print("outside send conn for loop\n")
 
