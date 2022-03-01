@@ -87,7 +87,7 @@ func main() {
 	total_conns = (total_nodes - 1) * 2
 	print("total_conns" + strconv.Itoa(total_conns))
 	self_node := node_info_map[node_name]
-	// wg.Add(2)
+	wg.Add(2)
 
 	print("going to recieve")
 	// Server
@@ -96,6 +96,8 @@ func main() {
 	print("going to send")
 	// Clients
 	go send_conn_reqs(self_node.node_name)
+
+	wg.Wait()
 }
 
 /////// 1) CONNECTIONS ///////
@@ -224,7 +226,7 @@ func wait_for_connections(conn net.Conn) {
 func handle_transactions(conn net.Conn) {
 	print("in handle transactions\n")
 	print(conn)
-	print("\n")
+	print()
 }
 
 ////// Error Handling ///////
