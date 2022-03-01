@@ -38,6 +38,7 @@ var total_conns = 0 // Total number of connections we're expecting
 // TRANSACTIONS
 
 func main() {
+	time.Sleep(5 * time.Second)
 	// Argument parsing
 	if len(os.Args) < 3 {
 		print("Incorrect number of Arguments!\n")
