@@ -16,19 +16,20 @@ import (
 var wg sync.WaitGroup
 
 // DATA
-var node_id = 0
+var self_node_name = ""
+var self_node_id = 0
 var total_nodes = 0
 var node_info_map = make(map[string]node)
 
 type node struct {
 	node_name         string
+	node_id           int
 	host_name         string
+	ip_addr           string
 	port_num          string
 	connected_to_self bool
 	is_ready          bool // connected to all nodes in the network
 }
-
-// THREADING
 
 // CONNECTIONS
 type curr_conns_mutex struct {
@@ -42,12 +43,12 @@ var total_conns = 0 // Total number of connections we're expecting
 // TRANSACTIONS
 // Message that is sent between processes
 type message struct {
-	data           string
-	deliveredIds   []int // the process ids where the message is delivered
-	originId       int
-	proposals      []float64 // null or data
-	message_id     string    // hash
-	final_priority float64   // null when start
+	Data           string
+	DeliveredIds   []int // the process ids where the message is delivered
+	Origin_id      int
+	Proposals      []float64 // null or data
+	Message_id     string    // hash
+	Final_priority float64   // null when start
 }
 
 type heap_message struct {
@@ -67,13 +68,15 @@ type message_info_mutex struct {
 	message_info_map map[string]message
 }
 
+// {message_id: message}
 var message_info_map = message_info_mutex{
 	message_info_map: make(map[string]message),
 }
 
 type job_queue_mutex struct {
-	mutex     sync.Mutex
-	job_queue []string
+	mutex     *sync.Mutex
+	job_queue []message
+	cond      *sync.Cond
 }
 
 var job_queues = make(map[string]job_queue_mutex)
@@ -100,17 +103,27 @@ func main() {
 	content3 := strings.Split(content2, "\n")
 
 	// Node creation
-	node_id := node_name[:len(node_name)-1]
-	print(node_id)
-	print("\n")
+	self_node_name = node_name
+	self_node_id, _ = strconv.Atoi(node_name[len(node_name)-1:])
+	print(self_node_id)
+
 	total_nodes, _ := strconv.Atoi(content3[0])
 
 	for i := 1; i <= total_nodes; i++ {
 		node_info := strings.Split(content3[i], " ")
 
+		// node_id, ip_addr: get additional fields
+		node_id, _ := strconv.Atoi(node_info[0][len(node_info[0])-1:])
+
+		ip_addr_net, err := net.LookupIP(node_info[1])
+		ip_addr := ip_addr_net[0].String()
+		handle_err(err)
+
 		new_node := node{
 			node_name:         node_info[0],
+			node_id:           node_id,
 			host_name:         node_info[1],
+			ip_addr:           ip_addr,
 			port_num:          node_info[2],
 			connected_to_self: false,
 		}
@@ -120,21 +133,26 @@ func main() {
 
 	// Transaction setup
 	pq := make(PriorityQueue, 0)
-
 	heap.Init(&pq)
+
+	for node_name := range node_info_map {
+		// https://stackoverflow.com/questions/42605337/cannot-assign-to-struct-field-in-a-map
+		job_queue_at_node := job_queues[node_name]
+		job_queue_at_node.cond = sync.NewCond(job_queues[node_name].mutex)
+
+		job_queues[node_name] = job_queue_at_node
+	}
 
 	// Connections
 	total_conns = (total_nodes - 1) * 2
 	self_node := node_info_map[node_name]
 
+	// Threading Begins
 	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
 	wg.Add(2)
-
-	// print("going to recieve\n")
-	// Server
+	// Servers
 	go recieve_conn_reqs(self_node.port_num)
 
-	// print("going to send\n")
 	// Clients
 	go send_conn_reqs(self_node.node_name)
 
@@ -189,13 +207,10 @@ func send_req(host string, port string, name string) {
 
 func recieve_conn_reqs(port string) {
 	print("recieving conn reqs...\n")
-	// wg.Add(2)
 
 	for i := 0; i < total_conns/2; i++ {
 		go recieve_req(port)
 	}
-	// print("finished making threads for conn reqs...\n")
-	// wg.Wait()
 }
 
 func recieve_req(port string) {
@@ -205,25 +220,27 @@ func recieve_req(port string) {
 	ln, err := net.Listen("tcp", serv_port)
 	handle_err(err)
 
-	// Accept connecitons
+	// Accept connections
 	conn, err := ln.Accept()
 	handle_err(err)
-	print("")
+
+	// Check which node we just connected to
 	remote_addr := conn.RemoteAddr().(*net.TCPAddr)
-	SrcIP := remote_addr.IP.String()
-	SrcPort := uint(remote_addr.Port)
-	// DstPort := uint(localAddr.(*net.TCPAddr).Port)
-	print(remote_addr)
-	print("\n")
-	fmt.Println(SrcIP)
-	print("\n")
-	print(SrcPort)
-	// incoming_addr := conn.RemoteAddr()
-	// remote_addr_arr := strings.Split(remote_addr_str, ":")
+	received_ip := remote_addr.IP.String()
+
+	var curr_node_name string
+
+	for name, info := range node_info_map {
+		if received_ip == info.ip_addr {
+			curr_node_name = name
+		}
+	}
+
 	// Close listener
 	ln.Close()
 
-	wait_for_connections(conn, "node1", true)
+	// Wait for all connections to be established
+	wait_for_connections(conn, curr_node_name, true)
 }
 
 func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
@@ -248,15 +265,15 @@ func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 
 	// Move to handling transactions
 	if receiving {
-		handle_receiving_transactions(conn)
+		handle_receiving_transactions(conn, node_name)
 	} else {
-		handle_sending_transactions(conn)
+		handle_sending_transactions(conn, node_name)
 	}
 }
 
 ////// 2) TRANSACTIONS  ///////
 
-func handle_receiving_transactions(conn net.Conn) {
+func handle_receiving_transactions(conn net.Conn, node_name string) {
 	print("in handle recieving transactions\n")
 	print(conn)
 	print("\n")
@@ -264,19 +281,57 @@ func handle_receiving_transactions(conn net.Conn) {
 	for {
 		incoming, _ := bufio.NewReader(conn).ReadString('\n')
 		fmt.Print("Message Received:", string(incoming))
+
+		new_message := str_to_message(incoming)
+		incoming_message_id := new_message.Message_id
+		incoming_node_id := new_message.Origin_id
+		incoming_message_proposals := new_message.Proposals
+
+		if incoming_node_id == self_node_id { // If origin is ourselves
+			// Update message in dictionary (combine proposals)
+
+			// If proposals array is full
+			if len(incoming_message_proposals) == total_nodes-1 {
+				// Determine final priority
+
+				// Put on jobqueue for sending nodes
+				for node_name, info := range node_info_map {
+					if node_name != self_node_name {
+						// Put on jobqueue
+					}
+				}
+				// signal
+			} else {
+				// Do nothing, waiting on other proposals
+			}
+		} else { // If origin was another node
+
+		}
+
+		print(incoming_message_id)
+		print("\n")
+		print(incoming_node_id)
+		print("\n")
 	}
 }
 
-func handle_sending_transactions(conn net.Conn) {
-	print("in handle sending transactions\n")
+func handle_sending_transactions(conn net.Conn, node_name string) {
+	// print("in handle sending transactions\n")
+	// look into condition vars, sleep/wakeup on the condition variable
+	// since we have one consumer
+	job_queues[node_name].mutex.Lock()
 
-	// for {
-	// 	job_queues[node_name]
-	// }
+	curr_job_queue := job_queues[node_name].job_queue
 
-	// newmessage = message {data: "awefewf->3", deliveredIds: [], originId: node_id}
+	for len(curr_job_queue) <= 0 {
+		print("No more jobs to send at " + node_name)
+		job_queues[node_name].cond.Wait()
+	}
+	curr_job := curr_job_queue[0] // message struct
+	conn.Write([]byte(message_to_str(curr_job)))
+	curr_job_queue = curr_job_queue[1:]
 
-	// conn.Write([]byte(newmessage + "\n"))
+	job_queues[node_name].mutex.Unlock()
 }
 
 func message_to_str(m message) string {
