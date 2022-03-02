@@ -209,7 +209,7 @@ func recieve_req(port string) {
 	conn, err := ln.Accept()
 	handle_err(err)
 	print("")
-	remote_addr_str := conn.RemoteAddr().String()
+	remote_addr_str := conn.RemoteAddr().(*net.TCPAddr).String()
 	fmt.Println(remote_addr_str)
 	print(remote_addr_str)
 	// incoming_addr := conn.RemoteAddr()
