@@ -164,16 +164,13 @@ func send_conn_reqs(self_name string) {
 func send_req(host string, port string, name string) {
 	var conn net.Conn
 
-	// print("in send req\n")
+	print("in send req\n")
 	for conn == nil {
 		ip := host + ":" + port
 		conn, err := net.Dial("tcp", ip)
-		// print("established connection in send req\n")
+		print("established connection in send req\n")
 
-		// // Use preexisting thread to handle new connection
-		// print("AFTER WAIT FOR CONNECTION...\n")
-		// print(conn)
-		// print("\n")
+		// Use preexisting thread to handle new connection
 
 		if err != nil {
 			continue
@@ -181,7 +178,7 @@ func send_req(host string, port string, name string) {
 			wait_for_connections(conn, name, false)
 			break
 		}
-		// print("after wait for connections...\n")
+		print("after wait for connections...\n")
 	}
 
 	// if error, then redial else wait for connections and break
@@ -191,7 +188,7 @@ func send_req(host string, port string, name string) {
 }
 
 func recieve_conn_reqs(port string) {
-	// print("recieving conn reqs...\n")
+	print("recieving conn reqs...\n")
 	// wg.Add(2)
 
 	for i := 0; i < total_conns/2; i++ {
@@ -202,7 +199,7 @@ func recieve_conn_reqs(port string) {
 }
 
 func recieve_req(port string) {
-	// print("recieving...\n")
+	print("recieving...\n")
 	// Listen for incoming connections
 	serv_port := ":" + port
 	ln, err := net.Listen("tcp", serv_port)
@@ -211,8 +208,10 @@ func recieve_req(port string) {
 	// Accept connecitons
 	conn, err := ln.Accept()
 	handle_err(err)
-
+	print("")
 	print(conn.RemoteAddr())
+	// incoming_addr := conn.RemoteAddr()
+	// incoming_addr = strings.Split(incoming_addr, ":")
 
 	// Close listener
 	ln.Close()
@@ -223,7 +222,7 @@ func recieve_req(port string) {
 func wait_for_connections(conn net.Conn, name string, receiving bool) {
 	// easiest thing to do: keep two connections between two nodes -> one for listening, other for writing
 	// Increment current number of connections
-	// print("At beginning of wait for connections...\n")
+	print("At beginning of wait for connections...\n")
 
 	curr_conns.mutex.Lock()
 	curr_conns.curr_conns += 1
