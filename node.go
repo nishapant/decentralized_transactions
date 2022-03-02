@@ -77,7 +77,7 @@ func main() {
 		print("Incorrect number of Arguments!\n")
 		os.Exit(1)
 	}
-					
+
 	args := os.Args[1:]
 	node_name := args[0]
 	config_file := args[1]
@@ -93,6 +93,8 @@ func main() {
 
 	// Node creation
 	node_id := node_name[:len(node_name)-1]
+	print(node_id)
+	print("\n")
 	total_nodes, _ := strconv.Atoi(content3[0])
 
 	for i := 1; i <= total_nodes; i++ {
@@ -198,11 +200,11 @@ func recieve_req(port string) {
 	ln, err := net.Listen("tcp", serv_port)
 	handle_err(err)
 
-	// Accept connecitons 
+	// Accept connecitons
 	conn, err := ln.Accept()
 	handle_err(err)
 
-	// Close listener 
+	// Close listener
 	ln.Close()
 
 	wait_for_connections(conn, true)
@@ -268,8 +270,8 @@ func handle_sending_transactions(conn net.Conn) {
 	// 	final_priority float64   // null when start
 	// }
 
-	newmessage = message {data: "awefewf->3", deliveredIds: [], originId: node_id}
-	
+	// newmessage = message {data: "awefewf->3", deliveredIds: [], originId: node_id}
+
 	conn.Write([]byte(newmessage + "\n"))
 }
 
