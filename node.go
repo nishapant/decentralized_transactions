@@ -64,10 +64,12 @@ type message_info_mutex struct {
 	message_info_map map[string]message
 }
 
-var message_info_map = message_info_mutex{message_info_map: make(map[string]message)}
+var message_info_map = message_info_mutex{
+	message_info_map: make(map[string]message),
+}
 
 func main() {
-	time.Sleep(5 * time.Second)
+	// time.Sleep(5 * time.Second)
 	// Argument parsing
 	if len(os.Args) < 3 {
 		print("Incorrect number of Arguments!\n")
@@ -165,7 +167,7 @@ func send_req(host string, port string) {
 		if err != nil {
 			continue
 		} else {
-			wait_for_connections(conn)
+			wait_for_connections(conn, false)
 			break
 		}
 		// print("after wait for connections...\n")
@@ -197,12 +199,12 @@ func recieve_req(port string) {
 	conn, err := ln.Accept()
 	handle_err(err)
 
-	wait_for_connections(conn)
+	wait_for_connections(conn, true)
 
 	defer ln.Close()
 }
 
-func wait_for_connections(conn net.Conn) {
+func wait_for_connections(conn net.Conn, recieving bool) {
 	// easiest thing to do: keep two connections between two nodes -> one for listening, other for writing
 	// Increment current number of connections
 	print("At beginning of wait for connections...\n")
@@ -223,21 +225,28 @@ func wait_for_connections(conn net.Conn) {
 	print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...\n")
 
 	// Sleep for a few seconds to make sure all the other nodes have established connections
-	// when done establishing connection, add a 1-3 second timeout to let all the nodes establish connections to each other
 	// don't worry about multicast
 	time.Sleep(5 * time.Second)
 
 	// Move to handling transactions
-	handle_transactions(conn)
+	if recieving {
+		handle_recieving_transactions(conn)
+	} else {
+		handle_sending_transactions(conn)
+	}
 }
 
 ////// 2) Transactions  ///////
 
-func handle_transactions(conn net.Conn) {
-	print("in handle transactions\n")
+func handle_recieving_transactions(conn net.Conn) {
+	print("in handle recieving transactions\n")
 	print(conn)
-	print()
+	print("\n")
 
+}
+
+func handle_sending_transactions(conn net.Conn) {
+	print("in handle sending transactions\n")
 }
 
 ////// Error Handling ///////
