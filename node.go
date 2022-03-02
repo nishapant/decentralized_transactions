@@ -209,17 +209,21 @@ func recieve_req(port string) {
 	conn, err := ln.Accept()
 	handle_err(err)
 	print("")
-	print(conn.RemoteAddr())
+	remote_addr_str := conn.RemoteAddr().String()
+	fmt.Println(remote_addr_str)
+	print(remote_addr_str)
 	// incoming_addr := conn.RemoteAddr()
-	// incoming_addr = strings.Split(incoming_addr, ":")
+	remote_addr_arr := strings.Split(remote_addr_str, ":")
 
+	print(remote_addr_arr[0])
+	print(remote_addr_arr[1])
 	// Close listener
 	ln.Close()
 
 	wait_for_connections(conn, "node1", true)
 }
 
-func wait_for_connections(conn net.Conn, name string, receiving bool) {
+func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 	// easiest thing to do: keep two connections between two nodes -> one for listening, other for writing
 	// Increment current number of connections
 	print("At beginning of wait for connections...\n")
