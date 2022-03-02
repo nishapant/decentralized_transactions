@@ -63,16 +63,23 @@ type PriorityQueue []*heap_message
 
 // var pq = PriorityQueue
 
+type proposal_mutex struct {
+	mutex         sync.Mutex
+	curr_proposal int
+}
+
+var curr_proposal = proposal_mutex{curr_proposal: 0}
+
 type message_info_mutex struct {
 	mutex            sync.Mutex
 	message_info_map map[string]message
 }
 
-// {message_id: message}
-var message_info_map = message_info_mutex{
+var message_info_map = message_info_mutex{ // message_info_map: {message_id: message_info_mutex}
 	message_info_map: make(map[string]message),
 }
 
+// THREADING
 type job_queue_mutex struct {
 	mutex     *sync.Mutex
 	job_queue []message
@@ -81,8 +88,9 @@ type job_queue_mutex struct {
 
 var job_queues = make(map[string]job_queue_mutex)
 
+/////// MAIN ///////
+
 func main() {
-	// time.Sleep(5 * time.Second)
 	// Argument parsing
 	if len(os.Args) < 3 {
 		print("Incorrect number of Arguments!\n")
@@ -259,7 +267,7 @@ func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 	sec := 5
 	print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...\n")
 
-	// Sleep for a few seconds to make sure all the other nodes have established connections
+	// Sleep for a few seconds - make sure all the other nodes have established connections
 	// don't worry about multicast
 	time.Sleep(5 * time.Second)
 
@@ -275,8 +283,6 @@ func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 
 func handle_receiving_transactions(conn net.Conn, node_name string) {
 	print("in handle recieving transactions\n")
-	print(conn)
-	print("\n")
 
 	for {
 		incoming, _ := bufio.NewReader(conn).ReadString('\n')
@@ -287,25 +293,54 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		incoming_node_id := new_message.Origin_id
 		incoming_message_proposals := new_message.Proposals
 
+		_, ok := message_info_map.message_info_map[incoming_message_id]
+
+		// Check if the message is in the dictionary or not, add if it isnt
+		if !ok {
+			message_info_map.mutex.Lock()
+			message_info_map.message_info_map[incoming_message_id] = new_message
+			message_info_map.mutex.Unlock()
+		}
+
+		old_message := message_info_map.message_info_map[incoming_message_id]
+
+		// ISIS algo
 		if incoming_node_id == self_node_id { // If origin is ourselves
-			// Update message in dictionary (combine proposals)
+			old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
 
-			// If proposals array is full
-			if len(incoming_message_proposals) == total_nodes-1 {
+			// if proposals_arr = full
+			if len(old_message.Proposals) == total_nodes-1 {
 				// Determine final priority
+				final_pri := max_arr(old_message.Proposals)
+				old_message.Final_priority = final_pri
 
-				// Put on jobqueue for sending nodes
-				for node_name, info := range node_info_map {
+				// Put on jobqueue for sending nodes & deliver ourselves!
+				old_message.DeliveredIds = combine_arrs_int(old_message.DeliveredIds, []int{self_node_id})
+
+				for node_name := range node_info_map {
 					if node_name != self_node_name {
 						// Put on jobqueue
+
 					}
 				}
+				deliver_message(old_message)
+
+				// Update message in dictionary (combine proposals)
+				message_info_map.message_info_map[incoming_message_id] = old_message
+
 				// signal
+
 			} else {
-				// Do nothing, waiting on other proposals
+				// Update message in dictionary (combine proposals)
+				message_info_map.message_info_map[incoming_message_id] = old_message
 			}
 		} else { // If origin was another node
+			// Add proposal to Proposal array
+			curr_proposal.mutex.Lock()
 
+			curr_proposal.curr_proposal += 1
+			curr_proposal.mutex.Unlock()
+			// Add to jobqueue to be sent back to the original
 		}
 
 		print(incoming_message_id)
@@ -334,6 +369,64 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 	job_queues[node_name].mutex.Unlock()
 }
 
+func deliver_message(m message) {
+
+}
+
+////// Helpers ///////
+
+func combine_arrs_int(arr1 []int, arr2 []int) []int {
+	slice := append(arr1, arr2...)
+
+	keys := make(map[int]bool)
+	list := []int{}
+
+	// If the key(values of the slice) is not equal
+	// to the already present value in new slice (list)
+	// then we append it. else we jump on another element.
+	for _, entry := range slice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
+}
+
+func combine_arrs(arr1 []float64, arr2 []float64) []float64 {
+	slice := append(arr1, arr2...)
+
+	keys := make(map[float64]bool)
+	list := []float64{}
+
+	// If the key(values of the slice) is not equal
+	// to the already present value in new slice (list)
+	// then we append it. else we jump on another element.
+	for _, entry := range slice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
+}
+
+func remove_duplicates(slice []float64) []float64 {
+	keys := make(map[float64]bool)
+	list := []float64{}
+
+	// If the key(values of the slice) is not equal
+	// to the already present value in new slice (list)
+	// then we append it. else we jump on another element.
+	for _, entry := range slice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
+}
+
 func message_to_str(m message) string {
 	m_json, _ := json.Marshal(m)
 	m_str := string(m_json)
@@ -349,8 +442,16 @@ func str_to_message(m_str string) message {
 	return m
 }
 
-////// Error Handling ///////
+func max_arr(arr []float64) float64 {
+	max := arr[0]
+	for _, v := range arr {
+		if v > max {
+			max = v
+		}
+	}
 
+	return max
+}
 func handle_err(err error) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
