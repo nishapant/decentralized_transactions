@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"container/heap"
 	"fmt"
 	"net"
@@ -14,6 +15,7 @@ import (
 var wg sync.WaitGroup
 
 // DATA
+var node_id = 0
 var total_nodes = 0
 var node_info_map = make(map[string]node)
 
@@ -75,7 +77,7 @@ func main() {
 		print("Incorrect number of Arguments!\n")
 		os.Exit(1)
 	}
-
+					
 	args := os.Args[1:]
 	node_name := args[0]
 	config_file := args[1]
@@ -90,8 +92,8 @@ func main() {
 	content3 := strings.Split(content2, "\n")
 
 	// Node creation
-	total_nodes, err := strconv.Atoi(content3[0])
-	handle_err(err)
+	node_id := node_name[:len(node_name)-1]
+	total_nodes, _ := strconv.Atoi(content3[0])
 
 	for i := 1; i <= total_nodes; i++ {
 		node_info := strings.Split(content3[i], " ")
@@ -112,11 +114,10 @@ func main() {
 	heap.Init(&pq)
 
 	// Connections
-	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
 	total_conns = (total_nodes - 1) * 2
-	// print("total_conns" + strconv.Itoa(total_conns))
 	self_node := node_info_map[node_name]
 
+	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
 	wg.Add(2)
 
 	// print("going to recieve\n")
@@ -192,16 +193,19 @@ func recieve_conn_reqs(port string) {
 
 func recieve_req(port string) {
 	print("recieving...\n")
+	// Listen for incoming connections
 	serv_port := ":" + port
 	ln, err := net.Listen("tcp", serv_port)
 	handle_err(err)
 
+	// Accept connecitons 
 	conn, err := ln.Accept()
 	handle_err(err)
 
-	wait_for_connections(conn, true)
+	// Close listener 
+	ln.Close()
 
-	defer ln.Close()
+	wait_for_connections(conn, true)
 }
 
 func wait_for_connections(conn net.Conn, recieving bool) {
@@ -236,17 +240,37 @@ func wait_for_connections(conn net.Conn, recieving bool) {
 	}
 }
 
-////// 2) Transactions  ///////
+////// 2) TRANSACTIONS  ///////
 
 func handle_recieving_transactions(conn net.Conn) {
 	print("in handle recieving transactions\n")
 	print(conn)
 	print("\n")
 
+	for {
+		incoming, _ := bufio.NewReader(conn).ReadString('\n')
+		fmt.Print("Message Received:", string(incoming))
+	}
+
 }
 
 func handle_sending_transactions(conn net.Conn) {
 	print("in handle sending transactions\n")
+
+	newmessage := "hi"
+	// type message struct {
+	// 	mutex          sync.Mutex
+	// 	data           string
+	// 	deliveredIds   []int // the process ids where the message is delivered
+	// 	originId       int
+	// 	proposals      []float64 // null or data
+	// 	message_id     string    // hash
+	// 	final_priority float64   // null when start
+	// }
+
+	newmessage = message {data: "awefewf->3", deliveredIds: [], originId: node_id}
+	
+	conn.Write([]byte(newmessage + "\n"))
 }
 
 ////// Error Handling ///////
@@ -258,7 +282,7 @@ func handle_err(err error) {
 	}
 }
 
-////// PRIORITIY QUEUE //////
+////// PRIORITY QUEUE //////
 
 func (pq PriorityQueue) Len() int { return len(pq) }
 
