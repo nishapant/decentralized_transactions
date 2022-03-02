@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"container/heap"
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -41,7 +42,6 @@ var total_conns = 0 // Total number of connections we're expecting
 // TRANSACTIONS
 // Message that is sent between processes
 type message struct {
-	mutex          sync.Mutex
 	data           string
 	deliveredIds   []int // the process ids where the message is delivered
 	originId       int
@@ -57,6 +57,7 @@ type heap_message struct {
 	// The index is needed by update and is maintained by the heap.Interface methods.
 }
 
+// https://pkg.go.dev/container/heap
 type PriorityQueue []*heap_message
 
 // var pq = PriorityQueue
@@ -69,6 +70,13 @@ type message_info_mutex struct {
 var message_info_map = message_info_mutex{
 	message_info_map: make(map[string]message),
 }
+
+type job_queue_mutex struct {
+	mutex     sync.Mutex
+	job_queue []string
+}
+
+var job_queues = make(map[string]job_queue_mutex)
 
 func main() {
 	// time.Sleep(5 * time.Second)
@@ -144,7 +152,7 @@ func send_conn_reqs(self_name string) {
 		if name != self_name {
 			host := info.host_name
 			port := info.port_num
-			go send_req(host, port)
+			go send_req(host, port, name)
 		}
 	}
 
@@ -153,7 +161,7 @@ func send_conn_reqs(self_name string) {
 
 // in a single thread
 // sends a request to establish connection
-func send_req(host string, port string) {
+func send_req(host string, port string, name string) {
 	var conn net.Conn
 
 	// print("in send req\n")
@@ -170,7 +178,7 @@ func send_req(host string, port string) {
 		if err != nil {
 			continue
 		} else {
-			wait_for_connections(conn, false)
+			wait_for_connections(conn, name, false)
 			break
 		}
 		// print("after wait for connections...\n")
@@ -178,23 +186,23 @@ func send_req(host string, port string) {
 
 	// if error, then redial else wait for connections and break
 
-	print("outside send conn for loop\n")
+	// print("outside send conn for loop\n")
 
 }
 
 func recieve_conn_reqs(port string) {
-	print("recieving conn reqs...\n")
+	// print("recieving conn reqs...\n")
 	// wg.Add(2)
 
 	for i := 0; i < total_conns/2; i++ {
 		go recieve_req(port)
 	}
-	print("finished making threads for conn reqs...\n")
+	// print("finished making threads for conn reqs...\n")
 	// wg.Wait()
 }
 
 func recieve_req(port string) {
-	print("recieving...\n")
+	// print("recieving...\n")
 	// Listen for incoming connections
 	serv_port := ":" + port
 	ln, err := net.Listen("tcp", serv_port)
@@ -204,24 +212,22 @@ func recieve_req(port string) {
 	conn, err := ln.Accept()
 	handle_err(err)
 
+	print(conn.RemoteAddr())
+
 	// Close listener
 	ln.Close()
 
-	wait_for_connections(conn, true)
+	wait_for_connections(conn, "node1", true)
 }
 
-func wait_for_connections(conn net.Conn, recieving bool) {
+func wait_for_connections(conn net.Conn, name string, receiving bool) {
 	// easiest thing to do: keep two connections between two nodes -> one for listening, other for writing
 	// Increment current number of connections
-	print("At beginning of wait for connections...\n")
+	// print("At beginning of wait for connections...\n")
 
 	curr_conns.mutex.Lock()
 	curr_conns.curr_conns += 1
 	curr_conns.mutex.Unlock()
-
-	// print("passed mutex...\n")
-	print(curr_conns.curr_conns)
-	// print(" curr cons\n")
 
 	for curr_conns.curr_conns < total_conns {
 		time.Sleep(20 * time.Millisecond)
@@ -235,8 +241,8 @@ func wait_for_connections(conn net.Conn, recieving bool) {
 	time.Sleep(5 * time.Second)
 
 	// Move to handling transactions
-	if recieving {
-		handle_recieving_transactions(conn)
+	if receiving {
+		handle_receiving_transactions(conn)
 	} else {
 		handle_sending_transactions(conn)
 	}
@@ -244,7 +250,7 @@ func wait_for_connections(conn net.Conn, recieving bool) {
 
 ////// 2) TRANSACTIONS  ///////
 
-func handle_recieving_transactions(conn net.Conn) {
+func handle_receiving_transactions(conn net.Conn) {
 	print("in handle recieving transactions\n")
 	print(conn)
 	print("\n")
@@ -253,26 +259,33 @@ func handle_recieving_transactions(conn net.Conn) {
 		incoming, _ := bufio.NewReader(conn).ReadString('\n')
 		fmt.Print("Message Received:", string(incoming))
 	}
-
 }
 
 func handle_sending_transactions(conn net.Conn) {
 	print("in handle sending transactions\n")
 
-	newmessage := "hi"
-	// type message struct {
-	// 	mutex          sync.Mutex
-	// 	data           string
-	// 	deliveredIds   []int // the process ids where the message is delivered
-	// 	originId       int
-	// 	proposals      []float64 // null or data
-	// 	message_id     string    // hash
-	// 	final_priority float64   // null when start
+	// for {
+	// 	job_queues[node_name]
 	// }
 
 	// newmessage = message {data: "awefewf->3", deliveredIds: [], originId: node_id}
 
-	conn.Write([]byte(newmessage + "\n"))
+	// conn.Write([]byte(newmessage + "\n"))
+}
+
+func message_to_str(m message) string {
+	m_json, _ := json.Marshal(m)
+	m_str := string(m_json)
+
+	return m_str
+}
+
+func str_to_message(m_str string) message {
+	var m message
+	err := json.Unmarshal([]byte(m_str), m)
+	handle_err(err)
+
+	return m
 }
 
 ////// Error Handling ///////
