@@ -659,6 +659,8 @@ func transfer(info []string) {
 
 func deposit(info []string) {
 	account := info[1]
+	print("info:", info, "\n")
+	print("info2:", info[2], "\n")
 	amount, _ := strconv.Atoi(info[2])
 
 	print("amount depositing: ", amount, "\n")
