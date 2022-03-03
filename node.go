@@ -157,7 +157,7 @@ func main() {
 
 	// Threading Begins
 	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
-	wg.Add(2)
+	wg.Add(3)
 	// Servers
 	go recieve_conn_reqs(self_node.port_num)
 
