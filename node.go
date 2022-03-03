@@ -441,7 +441,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		message_info_map.message_info_map[incoming_message_id] = old_message
 		message_info_map.mutex.Unlock()
 
-		// print("reaching delivery\n")
+		print("reaching delivery\n")
 		// Check for delivery
 		deliver_messages()
 	}
@@ -473,6 +473,11 @@ func add_transactions_to_queues(self_name string) {
 			Final_priority: -1,
 		}
 
+		// Update message info map
+		message_info_map.mutex.Lock()
+		message_info_map.message_info_map[message_id] = curr_message
+		message_info_map.mutex.Unlock()
+
 		// Update proc time map
 		proc_time_map.mutex.Lock()
 		proc_time_map.proc_time_start[message_id] = time.Now().Unix()
@@ -480,7 +485,6 @@ func add_transactions_to_queues(self_name string) {
 
 		// Update heap
 		counter.mutex.Lock()
-
 		h := heap_message{
 			message_id: message_id,
 			index:      counter.counter,
@@ -488,15 +492,8 @@ func add_transactions_to_queues(self_name string) {
 		}
 
 		message_id_to_heap_message[message_id] = &h
-
 		counter.counter++
-
 		counter.mutex.Unlock()
-
-		// Update message info map
-		message_info_map.mutex.Lock()
-		message_info_map.message_info_map[message_id] = curr_message
-		message_info_map.mutex.Unlock()
 
 		// print("pushing to priqueue\n")
 		pq.mutex.Lock()
@@ -587,7 +584,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 func deliver_messages() {
 	// print("delivering a message\n")
 	if len(pq.pq) != 0 {
-		// print("len pq is not 0", len(pq.pq), "\n")
+		print("len pq is not 0", len(pq.pq), "\n\n\n\n\n\n")
 
 		message_id_to_deliver := pq.pq.Peek().message_id
 		// print("message id to deliver: ", message_id_to_deliver, "\n")
