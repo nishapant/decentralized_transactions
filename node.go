@@ -156,8 +156,8 @@ func main() {
 	go send_conn_reqs(self_node.node_name)
 
 	// Handle transactions from generator.py
-	// time.sleep(6 * time.Second)
-	// go add_transactions_to_queues(self_node.node_name)
+	time.Sleep(6 * time.Second)
+	go add_transactions_to_queues(self_node.node_name)
 
 	wg.Wait()
 }
@@ -448,13 +448,24 @@ func unicast_msg(msg message, node_dest string) {
 }
 
 func multicast_msg(msg message) {
+	print("reaching multicast msg\n")
 	for node_name := range node_info_map {
 		if node_name != self_node_name {
 			// Put on jobqueue
 			job_queue_at_node := job_queues[node_name]
 			job_queue_at_node.mutex.Lock()
+			print("\n job queue len 1")
+			print(len(job_queues[node_name].job_queue))
+			print("\n")
+
 			job_queue_at_node.job_queue = append(job_queues[node_name].job_queue, msg)
 			job_queues[node_name] = job_queue_at_node
+
+			print("node name\n")
+			print(node_name)
+			print("\n job queue len 2")
+			print(len(job_queues[node_name].job_queue))
+			print("\n")
 
 			job_queue_at_node.mutex.Unlock()
 			// Signal to wake up that thread
