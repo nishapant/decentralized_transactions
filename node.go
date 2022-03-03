@@ -374,7 +374,6 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			counter.counter++
 			counter.mutex.Unlock()
 
-			// print("pushing to priqueue\n")
 			pq.mutex.Lock()
 			pq.pq.Push(&h)
 			pq.mutex.Unlock()
@@ -662,13 +661,20 @@ func deposit(info []string) {
 	account := info[1]
 	amount, _ := strconv.Atoi(info[2])
 
+	print("amount depositing: ", amount, "\n")
+
 	bank.mutex.Lock()
 	_, account_ok := bank.bank[account]
 	if !account_ok {
 		bank.bank[account] = 0
 	}
 
+	print("account: ", account, "\n")
+	print("total before deposit: ", bank.bank[account], "\n")
+
 	bank.bank[account] += amount
+
+	print("total after: ", bank.bank[account], "\n")
 	bank.mutex.Unlock()
 }
 
@@ -682,7 +688,9 @@ func print_balances() {
 	sort.Strings(accs)
 
 	for _, acc := range accs {
+		print("in for loop")
 		if bank.bank[acc] != 0 {
+			print("bank acc: ", acc)
 			balances += " "
 			balances += acc
 			balances += ": "
