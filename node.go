@@ -340,7 +340,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			continue
 		}
 
-		// print("Message Received:", string(incoming))
+		print("Message Received:", string(incoming))
 
 		new_message := str_to_message(incoming)
 		incoming_message_id := new_message.Message_id
@@ -560,7 +560,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 		job_queues[node_name].mutex.Lock()
 
 		for len(job_queues[node_name].job_queue) <= 0 {
-			print("No more jobs to send at " + node_name + "\n\n")
+			// print("No more jobs to send at " + node_name + "\n\n")
 			job_queues[node_name].cond.Wait()
 		}
 
