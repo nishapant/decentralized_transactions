@@ -186,6 +186,7 @@ func parse_file(config_file string) []string {
 func create_node_data(content []string) {
 	// Node creation
 	total_nodes, _ = strconv.Atoi(content[0])
+	print("total nodes: ", total_nodes, "\n")
 
 	for i := 1; i <= total_nodes; i++ {
 		node_info := strings.Split(content[i], " ")
