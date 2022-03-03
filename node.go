@@ -365,10 +365,13 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			// Priqueue
 			print("before mutex\n")
 			counter.mutex.Lock()
+			pri := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
+			print("pri: ", pri, "\n")
+
 			h := heap_message{
 				message_id: incoming_message_id,
 				index:      counter.counter,
-				priority:   float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id)),
+				priority:   pri,
 			}
 			print("created heap message\n")
 
