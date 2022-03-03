@@ -491,14 +491,18 @@ func add_transactions_to_queues(self_name string) {
 }
 
 func unicast_msg(msg message, node_dest string) {
+	print("node dest ", node_dest, "\n")
 	print("hi im in unicast\n")
 	job_queue_at_node := job_queues[node_dest]
 
 	print("got job queue\n")
 	// Put on jobqueue
 	job_queue_at_node.mutex.Lock()
+	print("before appending\n")
 	job_queue_at_node.job_queue = append(job_queues[node_dest].job_queue, msg)
+	print("after appending\n")
 	job_queues[node_dest] = job_queue_at_node
+	print("????\n")
 	job_queue_at_node.mutex.Unlock()
 
 	print("signaling\n")
