@@ -76,6 +76,8 @@ type heap_message struct {
 	// The index is needed by update and is maintained by the heap.Interface methods.
 }
 
+var message_id_to_heap_message = make(map[string](*heap_message))
+
 // https://pkg.go.dev/container/heap
 type PriorityQueue []*heap_message
 
@@ -102,8 +104,6 @@ type message_info_mutex struct {
 var message_info_map = message_info_mutex{ // message_info_map: {message_id: message_info_mutex}
 	message_info_map: make(map[string]message),
 }
-
-var message_id_to_heap_message = make(map[string](*heap_message))
 
 // TRANSACTIONS
 type account_mutex struct {
@@ -350,6 +350,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		incoming_message_id := new_message.Message_id
 		incoming_node_id := new_message.Origin_id
 		incoming_message_proposals := new_message.Proposals
+		print("incoming mess id: ", incoming_message_id, "\n")
 
 		// Put new messages into the heap and dictionary
 		_, ok := message_info_map.message_info_map[incoming_message_id]
@@ -369,6 +370,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				index:      counter.counter,
 				priority:   float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id)),
 			}
+			print("created heap message\n")
 
 			message_id_to_heap_message[incoming_message_id] = &h
 
@@ -391,6 +393,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		// ISIS algo
 		// If origin is ourselves (receiving a proposed priority for a message we sent)
 		if incoming_node_id == self_node_id {
+			print("origin ourselves...\n")
 			old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
 
 			// if proposals_arr = full
