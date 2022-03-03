@@ -555,7 +555,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 		curr_job := curr_job_queue[0] // message struct
 		print("Message Sending: ", message_to_str(curr_job), "\n")
 		conn.Write([]byte(message_to_str(curr_job)))
-		curr_job_queue = curr_job_queue[1:]
+		job_queues[node_name].job_queue = curr_job_queue[1:]
 
 		// print("finished writing to connection...\n")
 		job_queues[node_name].mutex.Unlock()
@@ -569,7 +569,7 @@ func deliver_messages() {
 		message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
 
 		if message_to_deliver.Final_priority > 0 {
-			print("final priority greater than 0...\n")
+			print("final priority greater than 0...\")
 			// Update bank
 			process_message_data(message_to_deliver)
 
