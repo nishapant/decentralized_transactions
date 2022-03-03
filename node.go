@@ -51,7 +51,7 @@ type job_queue_mutex struct {
 }
 
 type counter_mutex struct {
-	mutex   *sync.Mutex
+	mutex   sync.Mutex
 	counter int
 }
 
