@@ -569,6 +569,7 @@ func deliver_messages() {
 		message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
 
 		if message_to_deliver.Final_priority > 0 {
+			print("final priority greater than 0...\n")
 			// Update bank
 			process_message_data(message_to_deliver)
 
