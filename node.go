@@ -435,7 +435,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		message_info_map.message_info_map[incoming_message_id] = old_message
 		message_info_map.mutex.Unlock()
 
-		print("reaching delivery\n")
+		// print("reaching delivery\n")
 		// Check for delivery
 		deliver_messages()
 	}
