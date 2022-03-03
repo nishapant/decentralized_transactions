@@ -340,7 +340,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			continue
 		}
 
-		// print("Message Received:", string(incoming))
+		print("Message Received:", string(incoming))
 
 		new_message := str_to_message(incoming)
 		incoming_message_id := new_message.Message_id
@@ -431,7 +431,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			} else {
 				// 2) Priority has been determined
 				old_message.Final_priority = new_message.Final_priority
-				print("Found final priority: ", old_message.Final_priority, "\n")
+				// print("Found final priority: ", old_message.Final_priority, "\n")
 
 				//update message in priority queue
 				pq.mutex.Lock()
@@ -468,8 +468,6 @@ func add_transactions_to_queues(self_name string) {
 		proposals := []float64{proposal}
 		sequence_num.sequence_num += 1
 		sequence_num.mutex.Unlock()
-
-		print("self node id: ", self_node_id, "\n\n")
 
 		curr_message := message{
 			Data:           curr_transaction,
