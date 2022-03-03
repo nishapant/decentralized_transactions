@@ -340,7 +340,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			continue
 		}
 
-		print("Message Received:", string(incoming))
+		// print("Message Received:", string(incoming))
 
 		new_message := str_to_message(incoming)
 		incoming_message_id := new_message.Message_id
@@ -383,6 +383,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 
 		// ISIS algo
 		// If origin is ourselves (receiving a proposed priority for a message we sent)
+		// print("incoming node id: ", incoming_node_origin_id)
 		if incoming_node_origin_id == self_node_id {
 			// print("origin ourselves...\n")
 			old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
@@ -467,6 +468,8 @@ func add_transactions_to_queues(self_name string) {
 		proposals := []float64{proposal}
 		sequence_num.sequence_num += 1
 		sequence_num.mutex.Unlock()
+
+		print("self node id: ", self_node_id, "\n\n")
 
 		curr_message := message{
 			Data:           curr_transaction,
