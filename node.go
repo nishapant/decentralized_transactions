@@ -142,12 +142,7 @@ func main() {
 	create_queues()
 
 	// Connections
-	print("total_nodes ")
-	print(strconv.Itoa(total_nodes) + "\n\n\n")
 	total_conns = (total_nodes - 1) * 2
-
-	print("total conns ")
-	print("\n")
 	self_node := node_info_map[node_name]
 
 	print("begin threading")
@@ -161,6 +156,7 @@ func main() {
 	go send_conn_reqs(self_node.node_name)
 
 	// Handle transactions from generator.py
+	// time.sleep(6 * time.Second)
 	// go add_transactions_to_queues(self_node.node_name)
 
 	wg.Wait()
