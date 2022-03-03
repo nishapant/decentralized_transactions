@@ -198,7 +198,7 @@ func create_node_data(content []string) {
 		if node_name == self_node_name {
 			// print("declaring self node id:", node_id, "\n")
 			self_node_id = node_id
-			print("set node id to:", self_node_id, "\n")
+			// print("set node id to:", self_node_id, "\n")
 		}
 
 		ip_addr_net, _ := net.LookupIP(node_info[1])
@@ -395,7 +395,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			// print("origin ourselves...\n")
 			old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
 
-			print("\n\n\n\n\n\n ", len(old_message.Proposals), "\n\n\n\n\n\n\n")
+			// print("\n\n\n\n\n\n ", len(old_message.Proposals), "\n\n\n\n\n\n\n")
 
 			// if proposals_arr = full
 			if len(old_message.Proposals) >= total_nodes {
