@@ -164,6 +164,7 @@ func main() {
 
 	for node_name := range node_info_map {
 		// https://stackoverflow.com/questions/42605337/cannot-assign-to-struct-field-in-a-map
+		job_queues[node_name] = job_queue_mutex{job_queue: []message{}}
 		job_queue_at_node := job_queues[node_name]
 		job_queue_at_node.cond = sync.NewCond(job_queues[node_name].mutex)
 		job_queues[node_name] = job_queue_at_node

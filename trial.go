@@ -62,6 +62,13 @@ type heap_message struct {
 	// The index is needed by update and is maintained by the heap.Interface methods.
 }
 
+type account_mutex struct {
+	account_name string
+	balance      int
+}
+
+var bank = make(map[string]account_mutex)
+
 func main() {
 	// mess := message{Data: "afeawef", DeliveredIds: []int{1, 2, 4}, OriginId: 1, Proposals: []float64{1.1, 2.2, 3.3}, Message_id: "awefawef", Final_priority: -1.0}
 	// // print(mess)
@@ -130,6 +137,7 @@ func update_bank(m message) {
 		from := info[1]
 		amount := info[4]
 
+		if bank[from].account_name
 		print(to)
 		print(from)
 		print(amount)
