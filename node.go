@@ -665,13 +665,16 @@ func message_to_str(m message) string {
 }
 
 func str_to_message(m_str string) message {
-	var m *message
-	print("hi\n")
-	print(m_str)
-	print("\n")
-	err := json.Unmarshal([]byte(m_str), m)
-	handle_err(err)
-	return *m
+	var m message
+	// print("hi\n")
+	// print(m_str)
+	// print("\n")
+	err := json.Unmarshal([]byte(m_str), &m)
+	if err != nil {
+		print("Unmarshaling does not work...")
+	}
+
+	return m
 }
 
 func max_arr(arr []float64) float64 {
