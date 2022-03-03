@@ -155,7 +155,6 @@ func main() {
 	total_conns = (total_nodes - 1) * 2
 	self_node := node_info_map[node_name]
 
-	print("begin threading")
 	// Threading Begins
 	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
 	wg.Add(2)
@@ -190,16 +189,16 @@ func create_node_data(content []string) {
 
 	for i := 1; i <= total_nodes; i++ {
 		node_info := strings.Split(content[i], " ")
-		print("node info: ", node_info, "\n")
+		// print("node info: ", node_info, "\n")
 
 		node_name := node_info[0]
 		node_id := i
 		node_id_to_name[i] = node_name
 
 		if node_name == self_node_name {
-			print("declaring self node id:", node_id, "\n")
+			// print("declaring self node id:", node_id, "\n")
 			self_node_id = node_id
-			print("set node id to:", self_node_id, "\n")
+			// print("set node id to:", self_node_id, "\n")
 		}
 
 		ip_addr_net, _ := net.LookupIP(node_info[1])
@@ -268,7 +267,7 @@ func send_req(host string, port string, name string) {
 func recieve_conn_reqs(port string) {
 	print("recieive conn req\n")
 	for i := 0; i < total_conns/2; i++ {
-		print("in receive conn req for loop \n")
+		// print("in receive conn req for loop \n")
 		go recieve_req(port)
 	}
 }
@@ -304,7 +303,7 @@ func recieve_req(port string) {
 }
 
 func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
-	print("waiting\n")
+	// print("waiting\n")
 	// easiest thing to do: keep two connections between two nodes -> one for listening, other for writing
 	// Increment current number of connections
 	curr_conns.mutex.Lock()
@@ -354,12 +353,12 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		incoming_message_id := new_message.Message_id
 		incoming_node_id := new_message.Origin_id
 		incoming_message_proposals := new_message.Proposals
-		print("incoming mess id: ", incoming_message_id, "\n")
+		// print("incoming mess id: ", incoming_message_id, "\n")
 
 		// Put new messages into the heap and dictionary
 		_, ok := message_info_map.message_info_map[incoming_message_id]
 
-		print("put into dict\n")
+		// print("put into dict\n")
 		if !ok {
 			// dictionary
 			message_info_map.mutex.Lock()
@@ -381,12 +380,12 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				index:      counter.counter,
 				priority:   pri,
 			}
-			print("created heap message\n")
+			// print("created heap message\n")
 
 			message_id_to_heap_message[incoming_message_id] = &h
 
 			counter.counter++
-			print("before unlock mutex\n")
+			// print("before unlock mutex\n")
 
 			counter.mutex.Unlock()
 
@@ -396,7 +395,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			pq.mutex.Unlock()
 		}
 
-		print("getting old messages...\n")
+		// print("getting old messages...\n")
 
 		old_message := message_info_map.message_info_map[incoming_message_id]
 
@@ -574,8 +573,12 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 func deliver_messages() {
 	print("delivering a message\n")
 	if len(pq.pq) != 0 {
+		print("len pq is not 0\n")
+
 		message_id_to_deliver := pq.pq.Peek().message_id
 		message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
+
+		print("after message to deliver: ", message_to_str(message_to_deliver))
 
 		if message_to_deliver.Final_priority > 0 {
 			print("final priority greater than 0...\n")
