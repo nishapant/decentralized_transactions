@@ -416,6 +416,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				multicast_msg(old_message)
 			}
 		} else {
+			//FIX
 			print("origin other node...\n")
 			// If origin was another node
 			if old_message.Final_priority == -1.0 {
