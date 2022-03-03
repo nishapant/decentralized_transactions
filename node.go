@@ -198,7 +198,7 @@ func create_node_data(content []string) {
 		if node_name == self_node_name {
 			// print("declaring self node id:", node_id, "\n")
 			self_node_id = node_id
-			// print("set node id to:", self_node_id, "\n")
+			print("set node id to:", self_node_id, "\n")
 		}
 
 		ip_addr_net, _ := net.LookupIP(node_info[1])
@@ -340,7 +340,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			continue
 		}
 
-		print("Message Received:", string(incoming))
+		// print("Message Received:", string(incoming))
 
 		new_message := str_to_message(incoming)
 		incoming_message_id := new_message.Message_id
@@ -560,7 +560,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 		job_queues[node_name].mutex.Lock()
 
 		for len(job_queues[node_name].job_queue) <= 0 {
-			print("No more jobs to send at " + node_name)
+			print("No more jobs to send at " + node_name + "\n\n")
 			job_queues[node_name].cond.Wait()
 		}
 
@@ -740,8 +740,8 @@ func str_to_message(m_str string) message {
 		print("Unmarshaling does not work...")
 	}
 
-	print(m.Message_id)
-	print("\n")
+	// print(m.Message_id)
+	// print("\n")
 	return m
 }
 
