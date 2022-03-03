@@ -431,6 +431,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				incoming_node_name := node_id_to_name[incoming_node_id]
 				print("before unicast...\n")
 				unicast_msg(old_message, incoming_node_name)
+				print("after unicast...\n")
 			} else {
 				print("final priority determined\n")
 				// 2) Priority has been determined
@@ -490,14 +491,17 @@ func add_transactions_to_queues(self_name string) {
 }
 
 func unicast_msg(msg message, node_dest string) {
+	print("hi im in unicast\n")
 	job_queue_at_node := job_queues[node_dest]
 
+	print("got job queue\n")
 	// Put on jobqueue
 	job_queue_at_node.mutex.Lock()
 	job_queue_at_node.job_queue = append(job_queues[node_dest].job_queue, msg)
 	job_queues[node_dest] = job_queue_at_node
 	job_queue_at_node.mutex.Unlock()
 
+	print("signaling\n")
 	// Signal to wake up that thread
 	job_queues[node_dest].cond.Signal()
 }
