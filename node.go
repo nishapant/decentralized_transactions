@@ -621,7 +621,14 @@ func process_message_data(m message) {
 
 func update_bank(m message) {
 	data := m.Data
+	n := len(data)
+
+	if data[n-1] == '\n' {
+		data = data[0 : n-1]
+	}
+
 	info := strings.Split(data, " ")
+
 	print("updating bank with data:", data, "\n")
 
 	if info[0][:1] == "T" { // Transfer
@@ -659,11 +666,9 @@ func transfer(info []string) {
 
 func deposit(info []string) {
 	account := info[1]
-	print("info:", info, "\n")
-	print("info2:", info[2], "\n")
 	amount, _ := strconv.Atoi(info[2])
 
-	print("amount depositing: ", amount, "\n")
+	// print("amount depositing: ", amount, "\n")
 
 	bank.mutex.Lock()
 	_, account_ok := bank.bank[account]
