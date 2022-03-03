@@ -409,6 +409,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 
 			// if proposals_arr = full
 			if len(old_message.Proposals) == total_nodes {
+				print("final pri determining..\n")
 				// Determine final priority
 				final_pri := max_arr(old_message.Proposals)
 				old_message.Final_priority = final_pri
