@@ -321,6 +321,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 	print("handling recieving\n")
 	for {
 		incoming, _ := bufio.NewReader(conn).ReadString('\n')
+
 		print("hi\n\n\n")
 		if incoming == "" {
 			continue
@@ -333,9 +334,12 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		incoming_node_id := new_message.Origin_id
 		incoming_message_proposals := new_message.Proposals
 
+		print("processed new message a lil \n")
+
 		// Put new messages into the heap and dictionary
 		_, ok := message_info_map.message_info_map[incoming_message_id]
 
+		print("put into dict\n")
 		if !ok {
 			// dictionary
 			message_info_map.mutex.Lock()
@@ -362,6 +366,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 
 		old_message := message_info_map.message_info_map[incoming_message_id]
 
+		print("reached isis algo\n")
 		// ISIS algo
 		// If origin is ourselves (receiving a proposed priority for a message we sent)
 		if incoming_node_id == self_node_id {
@@ -403,6 +408,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 
 		message_info_map.message_info_map[incoming_message_id] = old_message
 
+		print("reaching delivery\n")
 		// Check for delivery
 		deliver_messages()
 	}
@@ -479,6 +485,8 @@ func multicast_msg(msg message) {
 			time.Sleep(10 * time.Millisecond)
 		}
 	}
+
+	print("exiting multicast msg\n")
 }
 
 func handle_sending_transactions(conn net.Conn, node_name string) {
@@ -499,6 +507,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 	conn.Write([]byte(message_to_str(curr_job)))
 	curr_job_queue = curr_job_queue[1:]
 
+	print("finished writing to connection...\n")
 	job_queues[node_name].mutex.Unlock()
 }
 
