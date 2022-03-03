@@ -585,7 +585,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 		}
 		job_queues[node_name].mutex.Unlock()
 
-		print("final len job queue: ", (job_queues[node_name].job_queue), "\n\n\n\n\n\n\n")
+		print("final len job queue: ", len(job_queues[node_name].job_queue), "\n\n\n\n\n\n\n")
 
 		print("finished writing to connection...\n")
 	}
