@@ -334,15 +334,8 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 	buf := bufio.NewReader(conn)
 
 	for {
-		// 	// conn.SetReadDeadline(time.Now().Add(40 * time.Millisecond))
 		incoming, _ := buf.ReadString('\n')
-		// 	if incoming != "" {
-		// 		print("Message Received:", string(incoming))
-		// 	}
 
-		// }
-		// // for {
-		// incoming, _ := bufio.NewReader(conn).ReadString('\n')
 		if incoming == "" {
 			continue
 		}
@@ -446,7 +439,9 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			}
 		}
 
+		message_info_map.mutex.Lock()
 		message_info_map.message_info_map[incoming_message_id] = old_message
+		message_info_map.mutex.Unlock()
 
 		print("reaching delivery\n")
 		// Check for delivery
@@ -460,6 +455,8 @@ func add_transactions_to_queues(self_name string) {
 	for {
 		reader := bufio.NewReader(os.Stdin)
 		curr_transaction, _ := reader.ReadString('\n')
+		print("curr transaction", curr_transaction, "\n")
+
 		if curr_transaction == "" {
 			continue
 		}
@@ -484,6 +481,32 @@ func add_transactions_to_queues(self_name string) {
 		proc_time_map.mutex.Lock()
 		proc_time_map.proc_time_start[message_id] = time.Now().Unix()
 		proc_time_map.mutex.Unlock()
+
+		// Update heap
+		counter.mutex.Lock()
+
+		h := heap_message{
+			message_id: message_id,
+			index:      counter.counter,
+			priority:   proposal,
+		}
+
+		message_id_to_heap_message[message_id] = &h
+
+		counter.counter++
+		// print("before unlock mutex\n")
+
+		counter.mutex.Unlock()
+
+		// Update message info map
+		message_info_map.mutex.Lock()
+		message_info_map.message_info_map[message_id] = curr_message
+		message_info_map.mutex.Unlock()
+
+		print("pushing to priqueue\n")
+		pq.mutex.Lock()
+		pq.pq.Push(&h)
+		pq.mutex.Unlock()
 
 		// add this to every job_queue
 		multicast_msg(curr_message)
@@ -554,7 +577,6 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 		conn.Write([]byte(message_to_str(curr_job)))
 
 		if entry, ok := job_queues[node_name]; ok {
-
 			// Then we modify the copy
 			entry.job_queue = curr_job_queue[1:]
 
