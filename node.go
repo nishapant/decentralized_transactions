@@ -459,18 +459,18 @@ func multicast_msg(msg message) {
 			// Put on jobqueue
 			job_queue_at_node := job_queues[node_name]
 			job_queue_at_node.mutex.Lock()
-			print("\n job queue len x")
-			print(len(job_queues[node_name].job_queue))
-			print("\n")
+			// print("\n job queue len x")
+			// print(len(job_queues[node_name].job_queue))
+			// print("\n")
 
 			job_queue_at_node.job_queue = append(job_queues[node_name].job_queue, msg)
 			job_queues[node_name] = job_queue_at_node
 
-			print("node name\n")
-			print(node_name)
-			print("\n job queue len x")
-			print(len(job_queues[node_name].job_queue))
-			print("\n")
+			// print("node name\n")
+			// print(node_name)
+			// print("\n job queue len x")
+			// print(len(job_queues[node_name].job_queue))
+			// print("\n")
 
 			// Signal to wake up that thread
 			job_queues[node_name].cond.Signal()
@@ -625,11 +625,11 @@ func message_to_str(m message) string {
 }
 
 func str_to_message(m_str string) message {
-	var m message
+	var m *message
 	err := json.Unmarshal([]byte(m_str), m)
 	handle_err(err)
 
-	return m
+	return *m
 }
 
 func max_arr(arr []float64) float64 {
