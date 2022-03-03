@@ -409,7 +409,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				multicast_msg(old_message)
 			}
 		} else { // If origin was another node
-			if old_message.Final_priority == -1.0 && len(old_message.Proposals) < total_nodes {
+			if old_message.Final_priority < 0 && len(old_message.Proposals) < total_nodes {
 				// 1) Update priority array
 				sequence_num.mutex.Lock()
 				proposal := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
@@ -430,6 +430,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			} else {
 				// 2) Priority has been determined
 				old_message.Final_priority = new_message.Final_priority
+				print("Found final priority: ", old_message.Final_priority, "\n")
 
 				//update message in priority queue
 				pq.mutex.Lock()
@@ -508,11 +509,6 @@ func add_transactions_to_queues(self_name string) {
 }
 
 func unicast_msg(msg message, node_dest string) {
-	// print("node dest ", node_dest, "\n")
-	// print("hi im in unicast\n")
-
-	// print("got job queue\n")
-
 	// Put on jobqueue
 	job_queues[node_dest].mutex.Lock()
 
@@ -629,6 +625,7 @@ func process_message_data(m message) {
 func update_bank(m message) {
 	data := m.Data
 	info := strings.Split(data, " ")
+	print("updating bank with data:", data, "\n")
 
 	if info[0][:1] == "T" { // Transfer
 		transfer(info)
