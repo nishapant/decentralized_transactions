@@ -404,7 +404,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			print("origin ourselves...\n")
 			old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
 
-			print("\n\n\n\n\n\n ", old_message.Proposals, "\n\n\n\n\n\n\n")
+			print("\n\n\n\n\n\n ", len(old_message.Proposals), "\n\n\n\n\n\n\n")
 
 			// if proposals_arr = full
 			if len(old_message.Proposals) >= total_nodes {
