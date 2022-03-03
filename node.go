@@ -371,7 +371,11 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			counter.mutex.Lock()
 
 			sequence_num.mutex.Lock()
-			pri := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
+			one := float64(sequence_num.sequence_num)
+			print("one: ", one, "\n")
+			two := (0.1 * float64(self_node_id))
+			print("two: ", two, "\n")
+			pri := one + two
 			sequence_num.mutex.Unlock()
 
 			print("pri: ", pri, "\n")
