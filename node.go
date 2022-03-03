@@ -575,7 +575,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 		curr_job := curr_job_queue[0] // message struct
 		print("Message Sending: ", message_to_str(curr_job), "\n")
 		conn.Write([]byte(message_to_str(curr_job)))
-
+		print("\n\n\n\n\n\n\n\nintial len of job queue: ", len(curr_job_queue))
 		if entry, ok := job_queues[node_name]; ok {
 			// Then we modify the copy
 			entry.job_queue = curr_job_queue[1:]
@@ -584,6 +584,8 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 			job_queues[node_name] = entry
 		}
 		job_queues[node_name].mutex.Unlock()
+
+		print("final len job queue: ", (job_queues[node_name].job_queue), "\n\n\n\n\n\n\n")
 
 		print("finished writing to connection...\n")
 	}
