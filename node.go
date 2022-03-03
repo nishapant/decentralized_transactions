@@ -573,7 +573,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 func deliver_messages() {
 	print("delivering a message\n")
 	if len(pq.pq) != 0 {
-		print("len pq is not 0\n")
+		print("len pq is not 0", len(pq.pq), "\n")
 
 		message_id_to_deliver := pq.pq.Peek().message_id
 		print("message id to deliver: ", message_id_to_deliver, "\n")
