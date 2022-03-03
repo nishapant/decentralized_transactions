@@ -369,8 +369,9 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			// Priqueue
 			print("before mutex\n")
 			counter.mutex.Lock()
-
+			print("sup")
 			sequence_num.mutex.Lock()
+			print("before seq num")
 			one := float64(sequence_num.sequence_num)
 			print("one: ", one, "\n")
 			two := (0.1 * float64(self_node_id))
