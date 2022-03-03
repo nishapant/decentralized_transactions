@@ -184,6 +184,10 @@ func create_node_data(content []string) {
 		node_id := i
 		node_id_to_name[i] = node_name
 
+		if node_name == self_node_name {
+			self_node_id = node_id
+		}
+
 		ip_addr_net, _ := net.LookupIP(node_info[1])
 		ip_addr := ip_addr_net[0].String()
 
