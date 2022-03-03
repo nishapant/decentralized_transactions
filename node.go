@@ -353,7 +353,6 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		incoming_message_id := new_message.Message_id
 		incoming_node_id := new_message.Origin_id
 		incoming_message_proposals := new_message.Proposals
-		// print("incoming mess id: ", incoming_message_id, "\n")
 
 		// Put new messages into the heap and dictionary
 		_, ok := message_info_map.message_info_map[incoming_message_id]
@@ -404,6 +403,8 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		if incoming_node_id == self_node_id {
 			print("origin ourselves...\n")
 			old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
+
+			print("\n\n\n\n\n\n ", old_message.Proposals), "\n\n\n\n\n\n\n"
 
 			// if proposals_arr = full
 			if len(old_message.Proposals) >= total_nodes {
@@ -574,7 +575,7 @@ func deliver_messages() {
 		print("message id to deliver: ", message_id_to_deliver, "\n")
 		message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
 
-		print("after message to deliver: ", message_to_str(message_to_deliver))
+		// print("after message to deliver: ", message_to_str(message_to_deliver))
 
 		if message_to_deliver.Final_priority > 0 {
 			print("final priority greater than 0...\n\n\n\n\n\n\n\n\n")
