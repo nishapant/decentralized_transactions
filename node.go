@@ -247,7 +247,9 @@ func send_req(host string, port string, name string) {
 }
 
 func recieve_conn_reqs(port string) {
+	print("recieive conn req\n")
 	for i := 0; i < total_conns/2; i++ {
+		print("in receive conn req for loop \n")
 		go recieve_req(port)
 	}
 }
