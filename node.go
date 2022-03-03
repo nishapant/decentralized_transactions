@@ -552,11 +552,10 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 
 		// completing a job and popping it off the jobqueue
 		curr_job := curr_job_queue[0] // message struct
-
 		print("Message Sending: ", message_to_str(curr_job), "\n")
 		conn.Write([]byte(message_to_str(curr_job)))
-		curr_job_queue = curr_job_queue[1:]
-		// job_queues[node_name].job_queue = curr_job_queue
+
+		// curr_job_queue = curr_job_queue[1:]
 
 		if entry, ok := job_queues[node_name]; ok {
 
@@ -566,10 +565,9 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 			// Then we reassign the copy
 			job_queues[node_name] = entry
 		}
-		// job_queues[node_name].job_queue = curr_job_queue[1:]
-
-		// print("finished writing to connection...\n")
 		job_queues[node_name].mutex.Unlock()
+
+		print("finished writing to connection...\n")
 	}
 }
 
