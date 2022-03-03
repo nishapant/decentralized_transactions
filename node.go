@@ -407,7 +407,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
 
 			// if proposals_arr = full
-			if len(old_message.Proposals) == total_nodes {
+			if len(old_message.Proposals) >= total_nodes {
 				print("final pri determining..\n")
 				// Determine final priority
 				final_pri := max_arr(old_message.Proposals)
@@ -520,7 +520,6 @@ func multicast_msg(msg message) {
 	for node_name := range node_info_map {
 		if node_name != self_node_name {
 			// Put on jobqueue
-
 			job_queues[node_name].mutex.Lock()
 			job_queue_at_node := job_queues[node_name]
 			job_queue_at_node.job_queue = append(job_queues[node_name].job_queue, msg)
@@ -553,8 +552,6 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 		curr_job := curr_job_queue[0] // message struct
 		print("Message Sending: ", message_to_str(curr_job), "\n")
 		conn.Write([]byte(message_to_str(curr_job)))
-
-		// curr_job_queue = curr_job_queue[1:]
 
 		if entry, ok := job_queues[node_name]; ok {
 
