@@ -118,6 +118,16 @@ type bank_mutex struct {
 
 var bank = bank_mutex{bank: make(map[string]int)}
 
+/////// GRAPH INFORMATION //////
+
+type processing_time_mutex struct {
+	mutex           sync.Mutex
+	proc_time_start map[string]int64
+	proc_time       []int64
+}
+
+var proc_time_map = processing_time_mutex{proc_time_start: make(map[string]int64), proc_time: []int64{}}
+
 /////// MAIN & SETUP ///////
 
 func main() {
@@ -447,6 +457,11 @@ func add_transactions_to_queues(self_name string) {
 			Final_priority: -1,
 		}
 
+		// Update proc time map
+		proc_time_map.mutex.Lock()
+		proc_time_map.proc_time_start[message_id] = time.Now().Unix()
+		proc_time_map.mutex.Unlock()
+
 		// add this to every job_queue
 		multicast_msg(curr_message)
 	}
@@ -493,7 +508,7 @@ func multicast_msg(msg message) {
 		}
 	}
 
-	// print("exiting multicast msg\n")
+	print("exiting multicast msg\n")
 }
 
 func handle_sending_transactions(conn net.Conn, node_name string) {
@@ -532,8 +547,23 @@ func deliver_messages() {
 			pq.mutex.Lock()
 			pq.pq.Pop()
 			pq.mutex.Unlock()
+
+			// Update processing time
+			update_processing_times(message_id_to_deliver)
 		}
 	}
+}
+
+func update_processing_times(message_id string) {
+	proc_time_map.mutex.Lock()
+	start_time := proc_time_map.proc_time_start[message_id]
+	end_time := time.Now().Unix()
+	diff := end_time - start_time
+	proc_time_map.proc_time = append(proc_time_map.proc_time, diff)
+	if len(proc_time_map.proc_time)%200 == 0 {
+		print(proc_time_map.proc_time)
+	}
+	proc_time_map.mutex.Unlock()
 }
 
 func process_message_data(m message) {
@@ -668,6 +698,7 @@ func handle_err(err error) {
 }
 
 ////// PRIORITY QUEUE DEFINITION //////
+// https://pkg.go.dev/container/heap#example-package-PriorityQueue
 
 func (pq PriorityQueue) Len() int { return len(pq) }
 
