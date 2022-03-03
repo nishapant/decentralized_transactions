@@ -419,6 +419,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			print("origin other node...\n")
 			// If origin was another node
 			if old_message.Final_priority == -1.0 {
+				print("final priority not determined\n")
 				// 1) Update priority array
 				sequence_num.mutex.Lock()
 				proposal := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
@@ -428,8 +429,10 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 
 				// Add to jobqueue to be sent back to the original
 				incoming_node_name := node_id_to_name[incoming_node_id]
+				print("before unicast...\n")
 				unicast_msg(old_message, incoming_node_name)
 			} else {
+				print("final priority determined\n")
 				// 2) Priority has been determined
 				old_message.Final_priority = new_message.Final_priority
 				//update message in priority queue
