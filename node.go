@@ -322,99 +322,99 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 	incoming, _ := bufio.NewReader(conn).ReadString('\n')
 	print("Message Received:", string(incoming))
 
-	// for {
-	// 	incoming, _ := bufio.NewReader(conn).ReadString('\n')
+	for {
+		incoming, _ := bufio.NewReader(conn).ReadString('\n')
 
-	// 	print("hi\n\n\n")
-	// 	if incoming == "" {
-	// 		continue
-	// 	}
+		print("hi\n\n\n")
+		if incoming == "" {
+			continue
+		}
 
-	// 	print("Message Received:", string(incoming))
+		print("Message Received:", string(incoming))
 
-	// 	new_message := str_to_message(incoming)
-	// 	incoming_message_id := new_message.Message_id
-	// 	incoming_node_id := new_message.Origin_id
-	// 	incoming_message_proposals := new_message.Proposals
+		new_message := str_to_message(incoming)
+		incoming_message_id := new_message.Message_id
+		incoming_node_id := new_message.Origin_id
+		incoming_message_proposals := new_message.Proposals
 
-	// 	print("processed new message a lil \n")
+		print("processed new message a lil \n")
 
-	// 	// Put new messages into the heap and dictionary
-	// 	_, ok := message_info_map.message_info_map[incoming_message_id]
+		// Put new messages into the heap and dictionary
+		_, ok := message_info_map.message_info_map[incoming_message_id]
 
-	// 	print("put into dict\n")
-	// 	if !ok {
-	// 		// dictionary
-	// 		message_info_map.mutex.Lock()
-	// 		message_info_map.message_info_map[incoming_message_id] = new_message
-	// 		message_info_map.mutex.Unlock()
+		print("put into dict\n")
+		if !ok {
+			// dictionary
+			message_info_map.mutex.Lock()
+			message_info_map.message_info_map[incoming_message_id] = new_message
+			message_info_map.mutex.Unlock()
 
-	// 		// Priqueue
-	// 		counter.mutex.Lock()
-	// 		h := heap_message{
-	// 			message_id: incoming_message_id,
-	// 			index:      counter.counter,
-	// 			priority:   float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id)),
-	// 		}
+			// Priqueue
+			counter.mutex.Lock()
+			h := heap_message{
+				message_id: incoming_message_id,
+				index:      counter.counter,
+				priority:   float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id)),
+			}
 
-	// 		message_id_to_heap_message[incoming_message_id] = &h
+			message_id_to_heap_message[incoming_message_id] = &h
 
-	// 		counter.counter++
-	// 		counter.mutex.Unlock()
+			counter.counter++
+			counter.mutex.Unlock()
 
-	// 		pq.mutex.Lock()
-	// 		pq.pq.Push(h)
-	// 		pq.mutex.Unlock()
-	// 	}
+			pq.mutex.Lock()
+			pq.pq.Push(h)
+			pq.mutex.Unlock()
+		}
 
-	// 	old_message := message_info_map.message_info_map[incoming_message_id]
+		old_message := message_info_map.message_info_map[incoming_message_id]
 
-	// 	print("reached isis algo\n")
-	// 	// ISIS algo
-	// 	// If origin is ourselves (receiving a proposed priority for a message we sent)
-	// 	if incoming_node_id == self_node_id {
-	// 		old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
+		print("reached isis algo\n")
+		// ISIS algo
+		// If origin is ourselves (receiving a proposed priority for a message we sent)
+		if incoming_node_id == self_node_id {
+			old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
 
-	// 		// if proposals_arr = full
-	// 		if len(old_message.Proposals) == total_nodes {
-	// 			// Determine final priority
-	// 			final_pri := max_arr(old_message.Proposals)
-	// 			old_message.Final_priority = final_pri
+			// if proposals_arr = full
+			if len(old_message.Proposals) == total_nodes {
+				// Determine final priority
+				final_pri := max_arr(old_message.Proposals)
+				old_message.Final_priority = final_pri
 
-	// 			multicast_msg(old_message)
-	// 		}
-	// 	} else {
-	// 		// If origin was another node
+				multicast_msg(old_message)
+			}
+		} else {
+			// If origin was another node
 
-	// 		if old_message.Final_priority == -1.0 {
-	// 			// 1) Update priority array
-	// 			sequence_num.mutex.Lock()
-	// 			proposal := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
-	// 			old_message.Proposals = combine_arrs(old_message.Proposals, []float64{proposal})
-	// 			sequence_num.sequence_num += 1
-	// 			sequence_num.mutex.Unlock()
+			if old_message.Final_priority == -1.0 {
+				// 1) Update priority array
+				sequence_num.mutex.Lock()
+				proposal := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
+				old_message.Proposals = combine_arrs(old_message.Proposals, []float64{proposal})
+				sequence_num.sequence_num += 1
+				sequence_num.mutex.Unlock()
 
-	// 			// Add to jobqueue to be sent back to the original
-	// 			incoming_node_name := node_id_to_name[incoming_node_id]
-	// 			unicast_msg(old_message, incoming_node_name)
-	// 		} else {
-	// 			// 2) Priority has been determined
-	// 			old_message.Final_priority = new_message.Final_priority
-	// 			//update message in priority queue
-	// 			pq.mutex.Lock()
-	// 			pq.pq.update(message_id_to_heap_message[old_message.Message_id],
-	// 				old_message.Message_id,
-	// 				old_message.Final_priority)
-	// 			pq.mutex.Unlock()
-	// 		}
-	// 	}
+				// Add to jobqueue to be sent back to the original
+				incoming_node_name := node_id_to_name[incoming_node_id]
+				unicast_msg(old_message, incoming_node_name)
+			} else {
+				// 2) Priority has been determined
+				old_message.Final_priority = new_message.Final_priority
+				//update message in priority queue
+				pq.mutex.Lock()
+				pq.pq.update(message_id_to_heap_message[old_message.Message_id],
+					old_message.Message_id,
+					old_message.Final_priority)
+				pq.mutex.Unlock()
+			}
+		}
 
-	// 	message_info_map.message_info_map[incoming_message_id] = old_message
+		message_info_map.message_info_map[incoming_message_id] = old_message
 
-	// 	print("reaching delivery\n")
-	// 	// Check for delivery
-	// 	deliver_messages()
-	// }
+		print("reaching delivery\n")
+		// Check for delivery
+		deliver_messages()
+	}
 }
 
 func add_transactions_to_queues(self_name string) {
