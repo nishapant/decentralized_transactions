@@ -272,11 +272,17 @@ func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 	time.Sleep(5 * time.Second)
 
 	// Move to handling transactions
+
+	print("before")
 	if receiving {
+		print("receiving")
 		handle_receiving_transactions(conn, node_name)
 	} else {
+		print("sending")
 		handle_sending_transactions(conn, node_name)
 	}
+
+	print("after")
 }
 
 ////// 2) TRANSACTIONS  ///////
@@ -318,6 +324,8 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			pq.mutex.Unlock()
 		}
 
+		print("maybeeeee")
+
 		old_message := message_info_map.message_info_map[incoming_message_id]
 
 		// ISIS algo
@@ -343,6 +351,8 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 					}
 				}
 			}
+			print("n0t in the if")
+
 		} else { // If origin was another node
 			if old_message.Final_priority == -1.0 {
 				// Add proposal to Proposal array
@@ -357,6 +367,8 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			} else {
 				old_message.Final_priority = new_message.Final_priority
 			}
+			print("n0t in the else")
+
 		}
 
 		message_info_map.message_info_map[incoming_message_id] = old_message
