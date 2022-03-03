@@ -274,21 +274,17 @@ func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 
 	// Move to handling transactions
 
-	print("before")
 	if receiving {
-		print("receiving")
 		handle_receiving_transactions(conn, node_name)
 	} else {
-		print("sending")
 		handle_sending_transactions(conn, node_name)
 	}
-
-	print("after")
 }
 
 ////// 2) TRANSACTIONS  ///////
 
 func handle_receiving_transactions(conn net.Conn, node_name string) {
+	print("hi")
 	for {
 		incoming, _ := bufio.NewReader(conn).ReadString('\n')
 		fmt.Print("Message Received:", string(incoming))
@@ -325,8 +321,6 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			pq.mutex.Unlock()
 		}
 
-		print("maybeeeee")
-
 		old_message := message_info_map.message_info_map[incoming_message_id]
 
 		// ISIS algo
@@ -352,7 +346,6 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 					}
 				}
 			}
-			print("n0t in the if")
 
 		} else { // If origin was another node
 			if old_message.Final_priority == -1.0 {
@@ -368,8 +361,6 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			} else {
 				old_message.Final_priority = new_message.Final_priority
 			}
-			print("n0t in the else")
-
 		}
 
 		message_info_map.message_info_map[incoming_message_id] = old_message
@@ -384,7 +375,6 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 	// look into condition vars, sleep/wakeup on the condition variable
 	// since we have one consumer
 
-	print("sup")
 	job_queues[node_name].mutex.Lock()
 
 	curr_job_queue := job_queues[node_name].job_queue
@@ -393,8 +383,6 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 		print("No more jobs to send at " + node_name)
 		job_queues[node_name].cond.Wait()
 	}
-
-	print("lolololol")
 
 	// completing a job and popping it off the jobqueue
 	curr_job := curr_job_queue[0] // message struct

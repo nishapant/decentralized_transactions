@@ -2,6 +2,7 @@ package main
 
 import (
 	"container/heap"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -63,16 +64,17 @@ type heap_message struct {
 	// The index is needed by update and is maintained by the heap.Interface methods.
 }
 
-type account_mutex struct {
-	account_name string
-	balance      int
-}
+// type account_mutex struct {
+// 	account_name string
+// 	balance      int
+// }
 
 type bank_mutex struct {
-	mutex sync.Mutex 
-	bank map[string]account_mutex
+	mutex sync.Mutex
+	bank  map[string]int
 }
-var bank = bank_mutex{bank: make(map[string]account_mutex)}
+
+var bank = bank_mutex{bank: make(map[string]int)}
 
 func main() {
 	// mess := message{Data: "afeawef", DeliveredIds: []int{1, 2, 4}, OriginId: 1, Proposals: []float64{1.1, 2.2, 3.3}, Message_id: "awefawef", Final_priority: -1.0}
@@ -140,15 +142,33 @@ func update_bank(m message) {
 	if info[0][:1] == "T" { // Transfer
 		to := info[3]
 		from := info[1]
-		amount := info[4]
+		amount, _ := strconv.Atoi(info[4])
 
-		if bank[from].account_name
+		bank.mutex.Lock()
+		_, to_ok := bank.bank[to]
+		if !to_ok {
+			bank.bank[to] = 0
+		}
+
+		_, from_ok := bank.bank[from]
+		if from_ok && bank.bank[from] >= amount {
+			// Transaction can go through
+			bank.bank[from] -= amount
+			bank.bank[to] += amount
+		}
+
+		bank.mutex.Unlock()
 		print(to)
 		print(from)
 		print(amount)
 	} else if info[0][:1] == "D" { // Deposit
 		account := info[1]
 		amount := info[2]
+
+		_, account_ok := bank.bank[account]
+		if !account_ok {
+			bank.bank[account_ok] = 0
+		}
 
 		print(account)
 		print(amount)
