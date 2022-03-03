@@ -340,7 +340,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			continue
 		}
 
-		// print("Message Received:", string(incoming))
+		print("Message Received:", string(incoming))
 
 		new_message := str_to_message(incoming)
 		incoming_message_id := new_message.Message_id
@@ -415,8 +415,8 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				proposal := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
 				old_message.Proposals = combine_arrs(old_message.Proposals, []float64{proposal})
 				sequence_num.sequence_num += 1
-				print("sleeping for 5 seconds...\n")
-				time.Sleep(5 * time.Second)
+				// print("sleeping for 5 seconds...\n")
+				// time.Sleep(5 * time.Second)
 				sequence_num.mutex.Unlock()
 
 				// Update message info map
@@ -428,7 +428,6 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				incoming_node_name := node_id_to_name[incoming_node_origin_id]
 				unicast_msg(old_message, incoming_node_name)
 			} else {
-				// print("final priority determined\n")
 				// 2) Priority has been determined
 				old_message.Final_priority = new_message.Final_priority
 
@@ -555,7 +554,7 @@ func multicast_msg(msg message) {
 func handle_sending_transactions(conn net.Conn, node_name string) {
 	for {
 		job_queues[node_name].mutex.Lock()
-		print("sending mutex...\n")
+		// print("sending mutex...\n")
 		for len(job_queues[node_name].job_queue) <= 0 {
 			// print("No more jobs to send at " + node_name + "\n\n")
 			job_queues[node_name].cond.Wait()
@@ -565,7 +564,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 
 		// completing a job and popping it off the jobqueue
 		curr_job := curr_job_queue[0] // message struct
-		print("Message Sending: ", message_to_str(curr_job), "\n")
+		// print("Message Sending: ", message_to_str(curr_job), "\n")
 		conn.Write([]byte(message_to_str(curr_job)))
 		if entry, ok := job_queues[node_name]; ok {
 			// Then we modify the copy
@@ -584,7 +583,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 func deliver_messages() {
 	// Check pq to see if it has something in it
 	if len(pq.pq) != 0 {
-		print("len pq is not 0", len(pq.pq), "\n\n\n\n\n\n")
+		// print("len pq is not 0", len(pq.pq), "\n\n\n\n\n\n")
 
 		message_id_to_deliver := pq.pq.Peek().message_id
 		message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
@@ -597,10 +596,10 @@ func deliver_messages() {
 
 			// Update priqueue
 			pq.mutex.Lock()
-			hm := pq.pq.Peek()
-			m := message_info_map.message_info_map[hm.message_id]
+			// hm := pq.pq.Peek()
+			// m := message_info_map.message_info_map[hm.message_id]
 
-			print(message_to_str(m))
+			// print(message_to_str(m))
 			pq.pq.Pop()
 			pq.mutex.Unlock()
 
