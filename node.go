@@ -382,6 +382,8 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 	// print("in handle sending transactions\n")
 	// look into condition vars, sleep/wakeup on the condition variable
 	// since we have one consumer
+
+	print("sup")
 	job_queues[node_name].mutex.Lock()
 
 	curr_job_queue := job_queues[node_name].job_queue
@@ -390,6 +392,8 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 		print("No more jobs to send at " + node_name)
 		job_queues[node_name].cond.Wait()
 	}
+
+	print("lolololol")
 
 	// completing a job and popping it off the jobqueue
 	curr_job := curr_job_queue[0] // message struct

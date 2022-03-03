@@ -112,21 +112,20 @@ func main() {
 	// }
 
 	// message parse testing
-	m := message{Data: "TRANSFER awefed -> awfew 22", Final_priority: 2.3}
+	m := message{Data: "TRANSFER first -> second 22", Final_priority: 2.3}
 	process_message_data(m)
 }
 
 func process_message_data(m message) {
 	update_bank(m)
-
 	print_balances(m)
 }
 
 func update_bank(m message) {
 	data := m.Data
 	info := strings.Split(data, " ")
-
-	if info[1][:1] == "T" { // Transfer
+	print(info[1])
+	if info[0][:1] == "T" { // Transfer
 		to := info[3]
 		from := info[1]
 		amount := info[4]
@@ -134,7 +133,7 @@ func update_bank(m message) {
 		print(to)
 		print(from)
 		print(amount)
-	} else if info[1][:1] == "D" { // Deposit
+	} else if info[0][:1] == "D" { // Deposit
 		account := info[1]
 		amount := info[2]
 
