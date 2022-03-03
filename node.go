@@ -177,7 +177,7 @@ func parse_file(config_file string) []string {
 
 	content2 := string(content)
 	content3 := strings.Split(content2, "\n")
-	print(content3)
+	// print(content3)
 
 	return content3
 }
@@ -185,7 +185,7 @@ func parse_file(config_file string) []string {
 func create_node_data(content []string) {
 	// Node creation
 	total_nodes, _ = strconv.Atoi(content[0])
-	print("total nodes: ", total_nodes, "\n")
+	// print("total nodes: ", total_nodes, "\n")
 
 	for i := 1; i <= total_nodes; i++ {
 		node_info := strings.Split(content[i], " ")
@@ -247,7 +247,7 @@ func send_conn_reqs(self_name string) {
 // sends a request to establish connection
 // Use preexisting thread to handle new connection
 func send_req(host string, port string, name string) {
-	print("sending req \n")
+	// print("sending req \n")
 	var conn net.Conn
 
 	for conn == nil {
@@ -265,7 +265,7 @@ func send_req(host string, port string, name string) {
 }
 
 func recieve_conn_reqs(port string) {
-	print("recieive conn req\n")
+	// print("recieive conn req\n")
 	for i := 0; i < total_conns/2; i++ {
 		// print("in receive conn req for loop \n")
 		go recieve_req(port)
@@ -273,7 +273,7 @@ func recieve_conn_reqs(port string) {
 }
 
 func recieve_req(port string) {
-	print("recieving...\n")
+	// print("recieving...\n")
 	// Listen for incoming connections
 	serv_port := ":" + port
 	ln, err := net.Listen("tcp", serv_port)
@@ -351,7 +351,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		_, ok := message_info_map.message_info_map[incoming_message_id]
 
 		// print("put into dict\n")
-		if !ok {
+		if !ok { // message we've never seen before
 			// dictionary
 			message_info_map.mutex.Lock()
 			message_info_map.message_info_map[incoming_message_id] = new_message
@@ -365,7 +365,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			pri := one + two
 			sequence_num.mutex.Unlock()
 
-			print("pri: ", pri, "\n")
+			// print("pri: ", pri, "\n")
 
 			h := heap_message{
 				message_id: incoming_message_id,
@@ -380,28 +380,26 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 
 			counter.mutex.Unlock()
 
-			print("pushing to priqueue\n")
+			// print("pushing to priqueue\n")
 			pq.mutex.Lock()
 			pq.pq.Push(&h)
 			pq.mutex.Unlock()
 		}
 
-		// print("getting old messages...\n")
-
 		old_message := message_info_map.message_info_map[incoming_message_id]
 
-		print("reached isis algo\n")
+		// print("reached isis algo\n")
 		// ISIS algo
 		// If origin is ourselves (receiving a proposed priority for a message we sent)
 		if incoming_node_id == self_node_id {
-			print("origin ourselves...\n")
+			// print("origin ourselves...\n")
 			old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
 
 			print("\n\n\n\n\n\n ", len(old_message.Proposals), "\n\n\n\n\n\n\n")
 
 			// if proposals_arr = full
 			if len(old_message.Proposals) >= total_nodes {
-				print("final pri determining..\n")
+				// print("final pri determining..\n")
 				// Determine final priority
 				final_pri := max_arr(old_message.Proposals)
 				old_message.Final_priority = final_pri
@@ -410,10 +408,10 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			}
 		} else {
 			//FIX
-			print("origin other node...\n")
+			// print("origin other node...\n")
 			// If origin was another node
 			if old_message.Final_priority == -1.0 {
-				print("final priority not determined\n")
+				// print("final priority not determined\n")
 				// 1) Update priority array
 				sequence_num.mutex.Lock()
 				proposal := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
@@ -423,16 +421,16 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 
 				// Add to jobqueue to be sent back to the original
 				incoming_node_name := node_id_to_name[incoming_node_id]
-				print("before unicast...\n")
+				// print("before unicast...\n")
 				unicast_msg(old_message, incoming_node_name)
-				print("after unicast...\n")
+				// print("after unicast...\n")
 			} else {
-				print("final priority determined\n")
+				// print("final priority determined\n")
 				// 2) Priority has been determined
 				old_message.Final_priority = new_message.Final_priority
 				//update message in priority queue
 				pq.mutex.Lock()
-				print("updating pq..\n")
+				// print("updating pq..\n")
 				pq.pq.update(message_id_to_heap_message[old_message.Message_id],
 					old_message.Final_priority)
 				pq.mutex.Unlock()
@@ -443,20 +441,18 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		message_info_map.message_info_map[incoming_message_id] = old_message
 		message_info_map.mutex.Unlock()
 
-		print("reaching delivery\n")
+		// print("reaching delivery\n")
 		// Check for delivery
 		deliver_messages()
 	}
 }
 
 func add_transactions_to_queues(self_name string) {
-	print("handling adding transactions\n")
+	// print("handling adding transactions\n")
 	// read from stdin
 	for {
 		reader := bufio.NewReader(os.Stdin)
 		curr_transaction, _ := reader.ReadString('\n')
-		// print("curr transaction", curr_transaction, "\n")
-
 		if curr_transaction == "" {
 			continue
 		}
@@ -494,7 +490,6 @@ func add_transactions_to_queues(self_name string) {
 		message_id_to_heap_message[message_id] = &h
 
 		counter.counter++
-		// print("before unlock mutex\n")
 
 		counter.mutex.Unlock()
 
@@ -503,7 +498,7 @@ func add_transactions_to_queues(self_name string) {
 		message_info_map.message_info_map[message_id] = curr_message
 		message_info_map.mutex.Unlock()
 
-		print("pushing to priqueue\n")
+		// print("pushing to priqueue\n")
 		pq.mutex.Lock()
 		pq.pq.Push(&h)
 		pq.mutex.Unlock()
@@ -514,24 +509,24 @@ func add_transactions_to_queues(self_name string) {
 }
 
 func unicast_msg(msg message, node_dest string) {
-	print("node dest ", node_dest, "\n")
-	print("hi im in unicast\n")
+	// print("node dest ", node_dest, "\n")
+	// print("hi im in unicast\n")
 
-	print("got job queue\n")
+	// print("got job queue\n")
 
 	// Put on jobqueue
 	job_queues[node_dest].mutex.Lock()
 
-	print("before appending\n")
+	// print("before appending\n")
 	job_queue_at_node := job_queues[node_dest]
 	job_queue_at_node.job_queue = append(job_queues[node_dest].job_queue, msg)
-	print("after appending\n")
+	// print("after appending\n")
 	job_queues[node_dest] = job_queue_at_node
-	print("????\n")
+	// print("????\n")
 
 	job_queue_at_node.mutex.Unlock()
 
-	print("signaling\n")
+	// print("signaling\n")
 	// Signal to wake up that thread
 	job_queues[node_dest].cond.Signal()
 
@@ -557,7 +552,7 @@ func multicast_msg(msg message) {
 		}
 	}
 
-	print("exiting multicast msg\n")
+	// print("exiting multicast msg\n")
 }
 
 func handle_sending_transactions(conn net.Conn, node_name string) {
@@ -573,9 +568,8 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 
 		// completing a job and popping it off the jobqueue
 		curr_job := curr_job_queue[0] // message struct
-		print("Message Sending: ", message_to_str(curr_job), "\n")
+		// print("Message Sending: ", message_to_str(curr_job), "\n")
 		conn.Write([]byte(message_to_str(curr_job)))
-		print("\n\n\n\n\n\n\n\nintial len of job queue: ", len(curr_job_queue))
 		if entry, ok := job_queues[node_name]; ok {
 			// Then we modify the copy
 			entry.job_queue = curr_job_queue[1:]
@@ -583,27 +577,26 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 			// Then we reassign the copy
 			job_queues[node_name] = entry
 		}
+
 		job_queues[node_name].mutex.Unlock()
 
-		print("final len job queue: ", len(job_queues[node_name].job_queue), "\n\n\n\n\n\n\n")
-
-		print("finished writing to connection...\n")
+		// print("finished writing to connection...\n")
 	}
 }
 
 func deliver_messages() {
-	print("delivering a message\n")
+	// print("delivering a message\n")
 	if len(pq.pq) != 0 {
-		print("len pq is not 0", len(pq.pq), "\n")
+		// print("len pq is not 0", len(pq.pq), "\n")
 
 		message_id_to_deliver := pq.pq.Peek().message_id
-		print("message id to deliver: ", message_id_to_deliver, "\n")
+		// print("message id to deliver: ", message_id_to_deliver, "\n")
 		message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
 
 		// print("after message to deliver: ", message_to_str(message_to_deliver))
 
 		if message_to_deliver.Final_priority > 0 {
-			print("final priority greater than 0...\n\n\n\n\n\n\n\n\n")
+			// print("final priority greater than 0...\n\n\n\n\n\n\n\n\n")
 			time.Sleep(5 * time.Millisecond)
 			// Update bank
 			process_message_data(message_to_deliver)
@@ -828,70 +821,3 @@ func (pq *PriorityQueue) update(item *heap_message, priority float64) {
 	item.priority = priority
 	heap.Fix(pq, item.index)
 }
-
-/////// Extraneous //////
-
-// func remove_duplicates(slice []float64) []float64 {
-// 	keys := make(map[float64]bool)
-// 	list := []float64{}
-
-// 	// If the key(values of the slice) is not equal
-// 	// to the already present value in new slice (list)
-// 	// then we append it. else we jump on another element.
-// 	for _, entry := range slice {
-// 		if _, value := keys[entry]; !value {
-// 			keys[entry] = true
-// 			list = append(list, entry)
-// 		}
-// 	}
-// 	return list
-// }
-
-// func combine_arrs_int(arr1 []int, arr2 []int) []int {
-// 	slice := append(arr1, arr2...)
-
-// 	keys := make(map[int]bool)
-// 	list := []int{}
-
-// 	// If the key(values of the slice) is not equal
-// 	// to the already present value in new slice (list)
-// 	// then we append it. else we jump on another element.
-// 	for _, entry := range slice {
-// 		if _, value := keys[entry]; !value {
-// 			keys[entry] = true
-// 			list = append(list, entry)
-// 		}
-// 	}
-// 	return list
-// }
-
-/////// literal garbage over here ////////
-
-// func recieve_conn_reqs(port string) {
-// 	serv_port := ":" + port
-// 	ln, err := net.Listen("tcp", serv_port)
-// 	handle_err(err)
-
-// 	print("in recieve conn reqs\n")
-// 	print(total_conns)
-// 	print("\n")
-
-// 	for curr_conns.curr_conns < total_conns {
-// 		conn, err := ln.Accept()
-// 		handle_err(err)
-
-// 		print("established connection in recieve conn req\n")
-
-// 		// Start thread for connection
-// 		go wait_for_connections(conn)
-// 	}
-
-// 	print("out of for loop\n")
-
-// 	// Close the listener
-// 	defer ln.Close()
-
-// 	print("closed listener\n")
-
-// 	wg.Wait()
-// }
