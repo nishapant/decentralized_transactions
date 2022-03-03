@@ -190,14 +190,16 @@ func create_node_data(content []string) {
 
 	for i := 1; i <= total_nodes; i++ {
 		node_info := strings.Split(content[i], " ")
+		print("node info: ", node_info, "\n")
 
 		node_name := node_info[0]
 		node_id := i
 		node_id_to_name[i] = node_name
 
 		if node_name == self_node_name {
-			print("declaring self node id:", self_node_id, "\n")
+			print("declaring self node id:", node_id, "\n")
 			self_node_id = node_id
+			print("set node id to:", self_node_id, "\n")
 		}
 
 		ip_addr_net, _ := net.LookupIP(node_info[1])
