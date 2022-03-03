@@ -346,6 +346,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		incoming_message_id := new_message.Message_id
 		incoming_node_origin_id := new_message.Origin_id
 		incoming_message_proposals := new_message.Proposals
+		incoming_final_priority := new_message.Final_priority
 
 		// Put new messages into the heap and dictionary
 		_, ok := message_info_map.message_info_map[incoming_message_id]
@@ -380,17 +381,13 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		}
 
 		old_message := message_info_map.message_info_map[incoming_message_id]
+		old_message.Final_priority = incoming_final_priority
+		old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
 
 		// ISIS algo
 		// If origin is ourselves (receiving a proposed priority for a message we sent)
 		// print("incoming node id: ", incoming_node_origin_id)
 		if incoming_node_origin_id == self_node_id {
-			// print("origin ourselves...\n")
-			old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
-
-			// print("\n\n\n\n\n\n ", len(old_message.Proposals), "\n\n\n\n\n\n\n")
-
-			// if proposals_arr = full
 			if len(old_message.Proposals) >= total_nodes {
 				// Determine final priority
 				final_pri := max_arr(old_message.Proposals)
@@ -410,7 +407,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				multicast_msg(old_message)
 			}
 		} else { // If origin was another node
-			if old_message.Final_priority < 0 && len(old_message.Proposals) < total_nodes {
+			if incoming_final_priority < 0 && len(old_message.Proposals) < total_nodes {
 				// 1) Update priority array
 				sequence_num.mutex.Lock()
 				proposal := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
