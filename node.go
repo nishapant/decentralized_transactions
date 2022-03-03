@@ -340,44 +340,37 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			continue
 		}
 
-		print("Message Received:", string(incoming))
+		// print("Message Received:", string(incoming))
 
 		new_message := str_to_message(incoming)
 		incoming_message_id := new_message.Message_id
-		incoming_node_id := new_message.Origin_id
+		incoming_node_origin_id := new_message.Origin_id
 		incoming_message_proposals := new_message.Proposals
 
 		// Put new messages into the heap and dictionary
 		_, ok := message_info_map.message_info_map[incoming_message_id]
 
-		// print("put into dict\n")
-		if !ok { // message we've never seen before
-			// dictionary
+		if !ok { // message we've never seen before (not in the dict)
+			// add to the dictionary
 			message_info_map.mutex.Lock()
 			message_info_map.message_info_map[incoming_message_id] = new_message
 			message_info_map.mutex.Unlock()
 
-			// Priqueue
+			// add to the priority queue
 			counter.mutex.Lock()
 			sequence_num.mutex.Lock()
-			one := float64(sequence_num.sequence_num)
-			two := (0.1 * float64(self_node_id))
-			pri := one + two
+			priority_new := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
 			sequence_num.mutex.Unlock()
-
-			// print("pri: ", pri, "\n")
 
 			h := heap_message{
 				message_id: incoming_message_id,
 				index:      counter.counter,
-				priority:   pri,
+				priority:   priority_new,
 			}
 
 			message_id_to_heap_message[incoming_message_id] = &h
 
 			counter.counter++
-			// print("before unlock mutex\n")
-
 			counter.mutex.Unlock()
 
 			// print("pushing to priqueue\n")
@@ -388,11 +381,10 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 
 		old_message := message_info_map.message_info_map[incoming_message_id]
 
-		// print("reached isis algo\n")
 		// ISIS algo
 		// If origin is ourselves (receiving a proposed priority for a message we sent)
-		if incoming_node_id == self_node_id {
-			// print("origin ourselves...\n")
+		if incoming_node_origin_id == self_node_id {
+			print("origin ourselves...\n")
 			old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
 
 			// print("\n\n\n\n\n\n ", len(old_message.Proposals), "\n\n\n\n\n\n\n")
@@ -420,7 +412,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				sequence_num.mutex.Unlock()
 
 				// Add to jobqueue to be sent back to the original
-				incoming_node_name := node_id_to_name[incoming_node_id]
+				incoming_node_name := node_id_to_name[incoming_node_origin_id]
 				// print("before unicast...\n")
 				unicast_msg(old_message, incoming_node_name)
 				// print("after unicast...\n")
@@ -583,6 +575,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 
 func deliver_messages() {
 	// print("delivering a message\n")
+
 	if len(pq.pq) != 0 {
 		print("len pq is not 0", len(pq.pq), "\n\n\n\n\n\n")
 
