@@ -409,7 +409,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				multicast_msg(old_message)
 			}
 		} else { // If origin was another node
-			if old_message.Final_priority == -1.0 {
+			if old_message.Final_priority == -1.0 && len(old_message.Proposals) < total_nodes {
 				// 1) Update priority array
 				sequence_num.mutex.Lock()
 				proposal := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
@@ -534,7 +534,6 @@ func unicast_msg(msg message, node_dest string) {
 }
 
 func multicast_msg(msg message) {
-	// print("reaching multicast msg\n")
 	for node_name := range node_info_map {
 		if node_name != self_node_name {
 			// Put on jobqueue
@@ -551,8 +550,6 @@ func multicast_msg(msg message) {
 			time.Sleep(10 * time.Millisecond)
 		}
 	}
-
-	// print("exiting multicast msg\n")
 }
 
 func handle_sending_transactions(conn net.Conn, node_name string) {
