@@ -582,7 +582,8 @@ func deliver_messages() {
 		print("after message to deliver: ", message_to_str(message_to_deliver))
 
 		if message_to_deliver.Final_priority > 0 {
-			print("final priority greater than 0...\n")
+			print("final priority greater than 0...\n\n\n\n\n\n\n\n\n")
+			time.Sleep(5 * time.Millisecond)
 			// Update bank
 			process_message_data(message_to_deliver)
 
