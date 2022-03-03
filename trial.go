@@ -3,6 +3,7 @@ package main
 import (
 	"container/heap"
 	"strings"
+	"sync"
 )
 
 // func main() {
@@ -67,7 +68,11 @@ type account_mutex struct {
 	balance      int
 }
 
-var bank = make(map[string]account_mutex)
+type bank_mutex struct {
+	mutex sync.Mutex 
+	bank map[string]account_mutex
+}
+var bank = bank_mutex{bank: make(map[string]account_mutex)}
 
 func main() {
 	// mess := message{Data: "afeawef", DeliveredIds: []int{1, 2, 4}, OriginId: 1, Proposals: []float64{1.1, 2.2, 3.3}, Message_id: "awefawef", Final_priority: -1.0}
