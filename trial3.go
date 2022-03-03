@@ -1,6 +1,6 @@
 package main
 
-import "encoding/json"
+import "math/rand"
 
 // https://www.calhoun.io/creating-random-strings-in-go/
 
@@ -21,28 +21,42 @@ type message struct {
 }
 
 func main() {
-	m := message{Data: "hi", Proposals: []float64{1.2, 2.3}, Origin_id: 3, Message_id: "Awefawef", Final_priority: -1}
-	print(message_to_str(m))
-	mes_str := message_to_str(m)
-	print("here: " + str_to_message(mes_str).Message_id)
+	random_hash()
+	// m := message{Data: "hi", Proposals: []float64{1.2, 2.3}, Origin_id: 3, Message_id: "Awefawef", Final_priority: -1}
+	// print(message_to_str(m))
+	// mes_str := message_to_str(m)
+	// print("here: " + str_to_message(mes_str).Message_id)
 }
 
-func str_to_message(m_str string) message {
-	var m message
-	print("hi\n")
-	print(m_str)
-	print("\n")
-	err := json.Unmarshal([]byte(m_str), &m)
-	if err != nil {
-		print("no")
+// func str_to_message(m_str string) message {
+// 	var m message
+// 	print("hi\n")
+// 	print(m_str)
+// 	print("\n")
+// 	err := json.Unmarshal([]byte(m_str), &m)
+// 	if err != nil {
+// 		print("no")
+// 	}
+
+// 	return m
+// }
+
+// func message_to_str(m message) string {
+// 	m_json, _ := json.Marshal(m)
+// 	m_str := string(m_json) + "\n"
+
+// 	return m_str
+// }
+
+func random_hash() string {
+	num_arr := []byte{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
+	hash := ""
+	for i := 0; i <= 64; i++ {
+		rand_int := rand.Intn(len(num_arr))
+		hash += string(num_arr[rand_int])
 	}
 
-	return m
-}
+	print(hash)
 
-func message_to_str(m message) string {
-	m_json, _ := json.Marshal(m)
-	m_str := string(m_json) + "\n"
-
-	return m_str
+	return hash
 }

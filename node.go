@@ -462,7 +462,7 @@ func add_transactions_to_queues(self_name string) {
 			continue
 		}
 
-		message_id := strconv.Itoa(rand.Int())
+		message_id := random_hash()
 
 		sequence_num.mutex.Lock()
 		proposal := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
@@ -724,6 +724,19 @@ func str_to_message(m_str string) message {
 	print(m.Message_id)
 	print("\n")
 	return m
+}
+
+func random_hash() string {
+	num_arr := []byte{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
+	hash := ""
+	for i := 0; i <= 64; i++ {
+		rand_int := rand.Intn(len(num_arr))
+		hash += string(num_arr[rand_int])
+	}
+
+	print(hash)
+
+	return hash
 }
 
 func max_arr(arr []float64) float64 {
