@@ -320,8 +320,10 @@ func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 func handle_receiving_transactions(conn net.Conn, node_name string) {
 	for {
 		incoming, _ := bufio.NewReader(conn).ReadString('\n')
+		if incoming != "" {
+			print("Message Received:", string(incoming))
+		}
 
-		print("Message Received:", string(incoming))
 	}
 	// for {
 	// 	incoming, _ := bufio.NewReader(conn).ReadString('\n')
