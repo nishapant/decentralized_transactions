@@ -380,7 +380,6 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				index:      counter.counter,
 				priority:   pri,
 			}
-			// print("created heap message\n")
 
 			message_id_to_heap_message[incoming_message_id] = &h
 
@@ -440,7 +439,6 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				pq.mutex.Lock()
 				print("updating pq..\n")
 				pq.pq.update(message_id_to_heap_message[old_message.Message_id],
-					old_message.Message_id,
 					old_message.Final_priority)
 				pq.mutex.Unlock()
 			}
@@ -787,8 +785,7 @@ func (pq *PriorityQueue) Peek() heap_message {
 }
 
 // update modifies the priority and value of an Item in the queue.
-func (pq *PriorityQueue) update(item *heap_message, message_id string, priority float64) {
-	item.message_id = message_id
+func (pq *PriorityQueue) update(item *heap_message, priority float64) {
 	item.priority = priority
 	heap.Fix(pq, item.index)
 }
