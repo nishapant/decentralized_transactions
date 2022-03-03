@@ -437,6 +437,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				old_message.Final_priority = new_message.Final_priority
 				//update message in priority queue
 				pq.mutex.Lock()
+				print("updating pq..\n")
 				pq.pq.update(message_id_to_heap_message[old_message.Message_id],
 					old_message.Message_id,
 					old_message.Final_priority)
