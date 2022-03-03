@@ -548,14 +548,25 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 			job_queues[node_name].cond.Wait()
 		}
 
-		// print("completing a job\n")
 		curr_job_queue := job_queues[node_name].job_queue
 
 		// completing a job and popping it off the jobqueue
 		curr_job := curr_job_queue[0] // message struct
+
 		print("Message Sending: ", message_to_str(curr_job), "\n")
 		conn.Write([]byte(message_to_str(curr_job)))
-		job_queues[node_name].job_queue = curr_job_queue[1:]
+		curr_job_queue = curr_job_queue[1:]
+		// job_queues[node_name].job_queue = curr_job_queue
+
+		if entry, ok := job_queues[node_name]; ok {
+
+			// Then we modify the copy
+			entry.job_queue = curr_job_queue[1:]
+
+			// Then we reassign the copy
+			job_queues[node_name] = entry
+		}
+		// job_queues[node_name].job_queue = curr_job_queue[1:]
 
 		// print("finished writing to connection...\n")
 		job_queues[node_name].mutex.Unlock()
@@ -569,7 +580,7 @@ func deliver_messages() {
 		message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
 
 		if message_to_deliver.Final_priority > 0 {
-			print("final priority greater than 0...\")
+			print("final priority greater than 0...\n")
 			// Update bank
 			process_message_data(message_to_deliver)
 
