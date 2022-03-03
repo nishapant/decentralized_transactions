@@ -4,13 +4,20 @@ import "encoding/json"
 
 // https://www.calhoun.io/creating-random-strings-in-go/
 
+// type message struct {
+// 	Data           string    `json:"Data"`
+// 	Origin_id      int       `json:"Origin_id"`
+// 	Proposals      []float64 `json:"Proposals"`      // null or data
+// 	Message_id     string    `json:"Message_id"`     // hash
+// 	Final_priority float64   `json:"Final_priority"` // null when start
+// }
+
 type message struct {
-	Data string `json:"Data"`
-	// DeliveredIds   []int // the process ids where the message is delivered
-	Origin_id      int       `json:"Origin_id"`
-	Proposals      []float64 `json:"Proposals"`      // null or data
-	Message_id     string    `json:"Message_id"`     // hash
-	Final_priority float64   `json:"Final_priority"` // null when start
+	Data           string
+	Origin_id      int
+	Proposals      []float64 // null or data
+	Message_id     string    // hash
+	Final_priority float64   // null when start
 }
 
 func main() {

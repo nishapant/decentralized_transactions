@@ -351,8 +351,6 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		incoming_node_id := new_message.Origin_id
 		incoming_message_proposals := new_message.Proposals
 
-		print("processed new message a lil \n")
-
 		// Put new messages into the heap and dictionary
 		_, ok := message_info_map.message_info_map[incoming_message_id]
 
@@ -364,6 +362,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			message_info_map.mutex.Unlock()
 
 			// Priqueue
+			print("before mutex\n")
 			counter.mutex.Lock()
 			h := heap_message{
 				message_id: incoming_message_id,
@@ -374,12 +373,17 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			message_id_to_heap_message[incoming_message_id] = &h
 
 			counter.counter++
+			print("before unlock mutex\n")
+
 			counter.mutex.Unlock()
 
+			print("pushing to priqueue\n")
 			pq.mutex.Lock()
 			pq.pq.Push(h)
 			pq.mutex.Unlock()
 		}
+
+		print("getting old messages...\n")
 
 		old_message := message_info_map.message_info_map[incoming_message_id]
 
@@ -398,6 +402,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				multicast_msg(old_message)
 			}
 		} else {
+			print("origin other node...\n")
 			// If origin was another node
 			if old_message.Final_priority == -1.0 {
 				// 1) Update priority array
@@ -674,6 +679,8 @@ func str_to_message(m_str string) message {
 		print("Unmarshaling does not work...")
 	}
 
+	print(m.Message_id)
+	print("\n")
 	return m
 }
 
