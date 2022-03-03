@@ -142,7 +142,10 @@ func main() {
 	create_queues()
 
 	// Connections
+	print("total_nodes ")
+	print(strconv.Itoa(total_nodes) + "\n\n\n")
 	total_conns = (total_nodes - 1) * 2
+
 	print("total conns ")
 	print("\n")
 	self_node := node_info_map[node_name]
@@ -176,7 +179,7 @@ func parse_file(config_file string) []string {
 
 func create_node_data(content []string) {
 	// Node creation
-	total_nodes, _ := strconv.Atoi(content[0])
+	total_nodes, _ = strconv.Atoi(content[0])
 
 	for i := 1; i <= total_nodes; i++ {
 		node_info := strings.Split(content[i], " ")
