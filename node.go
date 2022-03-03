@@ -145,6 +145,7 @@ func main() {
 	total_conns = (total_nodes - 1) * 2
 	self_node := node_info_map[node_name]
 
+	print("begin threading")
 	// Threading Begins
 	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
 	wg.Add(3)
