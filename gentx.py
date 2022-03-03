@@ -25,7 +25,7 @@ if len(sys.argv) > 1:
 else:
     rate = 1.0
 
-for i in range(2):
+for i in range(5):
     if random.random() < DEP_PROB:
         account = random_account()
         amount = random.randrange(1,101)
