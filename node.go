@@ -486,14 +486,13 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 	// look into condition vars, sleep/wakeup on the condition variable
 	job_queues[node_name].mutex.Lock()
 
-	curr_job_queue := job_queues[node_name].job_queue
-
-	for len(curr_job_queue) <= 0 {
+	for len(job_queues[node_name].job_queue) <= 0 {
 		print("No more jobs to send at " + node_name)
 		job_queues[node_name].cond.Wait()
 	}
 
 	print("completing a job\n")
+	curr_job_queue := job_queues[node_name].job_queue
 
 	// completing a job and popping it off the jobqueue
 	curr_job := curr_job_queue[0] // message struct
