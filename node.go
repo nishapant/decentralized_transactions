@@ -493,6 +493,8 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 		job_queues[node_name].cond.Wait()
 	}
 
+	print("completing a job\n")
+
 	// completing a job and popping it off the jobqueue
 	curr_job := curr_job_queue[0] // message struct
 	conn.Write([]byte(message_to_str(curr_job)))
