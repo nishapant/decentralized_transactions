@@ -626,8 +626,10 @@ func update_bank(m message) {
 	print("updating bank with data:", data, "\n")
 
 	if info[0][:1] == "T" { // Transfer
+		print("transfer")
 		transfer(info)
 	} else if info[0][:1] == "D" { // Deposit
+		print("deposit")
 		deposit(info)
 	}
 }
