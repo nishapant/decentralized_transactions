@@ -40,7 +40,21 @@ type curr_conns_mutex struct {
 var curr_conns = curr_conns_mutex{curr_conns: 0}
 var total_conns = 0 // Total number of connections we're expecting
 
-// TRANSACTIONS
+// THREADING
+type job_queue_mutex struct {
+	mutex     *sync.Mutex
+	job_queue []message
+	cond      *sync.Cond
+}
+
+type counter_mutex struct {
+	mutex   *sync.Mutex
+	counter int
+}
+
+var job_queues = make(map[string]job_queue_mutex)
+var counter = counter_mutex{counter: 0}
+
 // Message that is sent between processes
 type message struct {
 	Data           string
@@ -54,21 +68,27 @@ type message struct {
 type heap_message struct {
 	message_id string // hash
 	index      int    // The index of the item in the heap.
-	priority   int
+	priority   float64
 	// The index is needed by update and is maintained by the heap.Interface methods.
 }
 
 // https://pkg.go.dev/container/heap
 type PriorityQueue []*heap_message
 
-// var pq = PriorityQueue
-
-type proposal_mutex struct {
-	mutex         sync.Mutex
-	curr_proposal int
+type pq_mutex struct {
+	pq    PriorityQueue
+	mutex sync.Mutex
 }
 
-var curr_proposal = proposal_mutex{curr_proposal: 0}
+var pq_init PriorityQueue
+var pq = pq_mutex{pq: pq_init}
+
+type proposal_mutex struct {
+	mutex        sync.Mutex
+	sequence_num int
+}
+
+var sequence_num = proposal_mutex{sequence_num: 0}
 
 type message_info_mutex struct {
 	mutex            sync.Mutex
@@ -79,14 +99,13 @@ var message_info_map = message_info_mutex{ // message_info_map: {message_id: mes
 	message_info_map: make(map[string]message),
 }
 
-// THREADING
-type job_queue_mutex struct {
-	mutex     *sync.Mutex
-	job_queue []message
-	cond      *sync.Cond
+// TRANSACTIONS
+type account_mutex struct {
+	account_name string
+	balance      int
 }
 
-var job_queues = make(map[string]job_queue_mutex)
+var bank = make(map[string]account_mutex)
 
 /////// MAIN ///////
 
@@ -147,7 +166,6 @@ func main() {
 		// https://stackoverflow.com/questions/42605337/cannot-assign-to-struct-field-in-a-map
 		job_queue_at_node := job_queues[node_name]
 		job_queue_at_node.cond = sync.NewCond(job_queues[node_name].mutex)
-
 		job_queues[node_name] = job_queue_at_node
 	}
 
@@ -171,9 +189,6 @@ func main() {
 
 // Iterate through all the nodes that arent ourselves and establish a connection as client
 func send_conn_reqs(self_name string) {
-	// wg.Add(2)
-
-	// print("in send conn reqs")
 	for name, info := range node_info_map {
 		if name != self_name {
 			host := info.host_name
@@ -181,22 +196,16 @@ func send_conn_reqs(self_name string) {
 			go send_req(host, port, name)
 		}
 	}
-
-	// wg.Wait()
 }
 
-// in a single thread
 // sends a request to establish connection
+// Use preexisting thread to handle new connection
 func send_req(host string, port string, name string) {
 	var conn net.Conn
 
-	print("in send req\n")
 	for conn == nil {
 		ip := host + ":" + port
 		conn, err := net.Dial("tcp", ip)
-		print("established connection in send req\n")
-
-		// Use preexisting thread to handle new connection
 
 		if err != nil {
 			continue
@@ -204,18 +213,11 @@ func send_req(host string, port string, name string) {
 			wait_for_connections(conn, name, false)
 			break
 		}
-		print("after wait for connections...\n")
 	}
-
-	// if error, then redial else wait for connections and break
-
-	// print("outside send conn for loop\n")
 
 }
 
 func recieve_conn_reqs(port string) {
-	print("recieving conn reqs...\n")
-
 	for i := 0; i < total_conns/2; i++ {
 		go recieve_req(port)
 	}
@@ -254,8 +256,6 @@ func recieve_req(port string) {
 func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 	// easiest thing to do: keep two connections between two nodes -> one for listening, other for writing
 	// Increment current number of connections
-	print("At beginning of wait for connections...\n")
-
 	curr_conns.mutex.Lock()
 	curr_conns.curr_conns += 1
 	curr_conns.mutex.Unlock()
@@ -282,8 +282,6 @@ func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 ////// 2) TRANSACTIONS  ///////
 
 func handle_receiving_transactions(conn net.Conn, node_name string) {
-	print("in handle recieving transactions\n")
-
 	for {
 		incoming, _ := bufio.NewReader(conn).ReadString('\n')
 		fmt.Print("Message Received:", string(incoming))
@@ -293,19 +291,37 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		incoming_node_id := new_message.Origin_id
 		incoming_message_proposals := new_message.Proposals
 
+		// Put new messages into the heap and dictionary
 		_, ok := message_info_map.message_info_map[incoming_message_id]
 
-		// Check if the message is in the dictionary or not, add if it isnt
 		if !ok {
+			// dictionary
 			message_info_map.mutex.Lock()
 			message_info_map.message_info_map[incoming_message_id] = new_message
 			message_info_map.mutex.Unlock()
+
+			// heap
+			// thanks <3no
+			// bye
+			counter.mutex.Lock()
+			h := heap_message{
+				message_id: incoming_message_id,
+				index:      counter.counter,
+				priority:   float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id)),
+			}
+
+			counter.counter++
+			counter.mutex.Unlock()
+
+			pq.mutex.Lock()
+			pq.pq.Push(h)
+			pq.mutex.Unlock()
 		}
 
 		old_message := message_info_map.message_info_map[incoming_message_id]
 
 		// ISIS algo
-		if incoming_node_id == self_node_id { // If origin is ourselves
+		if incoming_node_id == self_node_id { // If origin is ourselves (receiving a proposed priority for a message we sent)
 			old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
 
 			// if proposals_arr = full
@@ -314,39 +330,39 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				final_pri := max_arr(old_message.Proposals)
 				old_message.Final_priority = final_pri
 
-				// Put on jobqueue for sending nodes & deliver ourselves!
-				old_message.DeliveredIds = combine_arrs_int(old_message.DeliveredIds, []int{self_node_id})
-
+				// send out the final priority to every other node
 				for node_name := range node_info_map {
 					if node_name != self_node_name {
 						// Put on jobqueue
+						job_queue_at_node := job_queues[node_name]
+						job_queue_at_node.job_queue = append(job_queues[node_name].job_queue, old_message)
+						job_queues[node_name] = job_queue_at_node
 
+						// Signal to wake up that thread
+						job_queues[node_name].cond.Signal()
 					}
 				}
-				deliver_message(old_message)
-
-				// Update message in dictionary (combine proposals)
-				message_info_map.message_info_map[incoming_message_id] = old_message
-
-				// signal
-
-			} else {
-				// Update message in dictionary (combine proposals)
-				message_info_map.message_info_map[incoming_message_id] = old_message
 			}
 		} else { // If origin was another node
-			// Add proposal to Proposal array
-			curr_proposal.mutex.Lock()
+			if old_message.Final_priority == -1.0 {
+				// Add proposal to Proposal array
+				sequence_num.mutex.Lock()
+				proposal := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
+				old_message.Proposals = combine_arrs(old_message.Proposals, []float64{proposal})
+				sequence_num.sequence_num += 1
+				sequence_num.mutex.Unlock()
 
-			curr_proposal.curr_proposal += 1
-			curr_proposal.mutex.Unlock()
-			// Add to jobqueue to be sent back to the original
+				// Add to jobqueue to be sent back to the original
+
+			} else {
+				old_message.Final_priority = new_message.Final_priority
+			}
 		}
 
-		print(incoming_message_id)
-		print("\n")
-		print(incoming_node_id)
-		print("\n")
+		message_info_map.message_info_map[incoming_message_id] = old_message
+
+		// Check for delivery
+		deliver_messages()
 	}
 }
 
@@ -362,6 +378,8 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 		print("No more jobs to send at " + node_name)
 		job_queues[node_name].cond.Wait()
 	}
+
+	// completing a job and popping it off the jobqueue
 	curr_job := curr_job_queue[0] // message struct
 	conn.Write([]byte(message_to_str(curr_job)))
 	curr_job_queue = curr_job_queue[1:]
@@ -369,8 +387,25 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 	job_queues[node_name].mutex.Unlock()
 }
 
-func deliver_message(m message) {
+func deliver_messages() {
+	message_id_to_deliver := pq.pq.Peek().message_id
+	message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
 
+	if len(pq.pq) != 0 && message_to_deliver.Final_priority > 0 {
+		// Update bank
+		parse_message_data(message_to_deliver)
+
+		// Update priqueue
+		pq.mutex.Lock()
+		pq.pq.Pop()
+		pq.mutex.Unlock()
+	}
+}
+
+func parse_message_data(m message) {
+	// data := message.data
+
+	// if data[:1]
 }
 
 ////// Helpers ///////
@@ -491,8 +526,16 @@ func (pq *PriorityQueue) Pop() interface{} {
 	return item
 }
 
+func (pq *PriorityQueue) Peek() heap_message {
+	if len(*pq) <= 0 {
+		return heap_message{priority: -1}
+	}
+
+	return *(*pq)[0]
+}
+
 // update modifies the priority and value of an Item in the queue.
-func (pq *PriorityQueue) update(item *heap_message, message_id string, priority int) {
+func (pq *PriorityQueue) update(item *heap_message, message_id string, priority float64) {
 	item.message_id = message_id
 	item.priority = priority
 	heap.Fix(pq, item.index)
