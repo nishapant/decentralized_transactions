@@ -92,7 +92,7 @@ type proposal_mutex struct {
 	sequence_num int
 }
 
-var sequence_num = proposal_mutex{sequence_num: 0}
+var sequence_num = proposal_mutex{sequence_num: 1}
 
 type message_info_mutex struct {
 	mutex            sync.Mutex
@@ -325,7 +325,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			continue
 		}
 
-		fmt.Print("Message Received:", string(incoming))
+		print("Message Received:", string(incoming))
 
 		new_message := str_to_message(incoming)
 		incoming_message_id := new_message.Message_id
