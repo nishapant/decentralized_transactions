@@ -321,6 +321,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 	print("handling recieving\n")
 	for {
 		incoming, _ := bufio.NewReader(conn).ReadString('\n')
+		print("hi\n\n\n")
 		if incoming == "" {
 			continue
 		}
