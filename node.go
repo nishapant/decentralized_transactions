@@ -384,51 +384,56 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		// ISIS algo
 		// If origin is ourselves (receiving a proposed priority for a message we sent)
 		if incoming_node_origin_id == self_node_id {
-			print("origin ourselves...\n")
+			// print("origin ourselves...\n")
 			old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
 
 			// print("\n\n\n\n\n\n ", len(old_message.Proposals), "\n\n\n\n\n\n\n")
 
 			// if proposals_arr = full
 			if len(old_message.Proposals) >= total_nodes {
-				// print("final pri determining..\n")
 				// Determine final priority
 				final_pri := max_arr(old_message.Proposals)
 				old_message.Final_priority = final_pri
 
+				// update priorities in heap
+				pq.mutex.Lock()
+				pq.pq.update(message_id_to_heap_message[old_message.Message_id],
+					old_message.Final_priority) // test this?
+				pq.mutex.Unlock()
+
+				// Update message info map
+				message_info_map.mutex.Lock()
+				message_info_map.message_info_map[incoming_message_id] = old_message
+				message_info_map.mutex.Unlock()
+
 				multicast_msg(old_message)
 			}
-		} else {
-			//FIX
-			// print("origin other node...\n")
-			// If origin was another node
+		} else { // If origin was another node
 			if old_message.Final_priority == -1.0 {
-				// print("final priority not determined\n")
 				// 1) Update priority array
 				sequence_num.mutex.Lock()
-
-				print("before update: ", len(old_message.Proposals), "\n")
 				proposal := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
 				old_message.Proposals = combine_arrs(old_message.Proposals, []float64{proposal})
 				sequence_num.sequence_num += 1
-				print("after update: ", len(old_message.Proposals), "\n")
-				print("sleeping for 5 seconds...\n")
+				// print("sleeping for 5 seconds...\n")
 				time.Sleep(5 * time.Second)
-
 				sequence_num.mutex.Unlock()
 
-				// Add to jobqueue to be sent back to the original
+				// Update message info map
+				message_info_map.mutex.Lock()
+				message_info_map.message_info_map[incoming_message_id] = old_message
+				message_info_map.mutex.Unlock()
+
+				// Unicast to origin node
 				incoming_node_name := node_id_to_name[incoming_node_origin_id]
-				// print("before unicast...\n")
 				unicast_msg(old_message, incoming_node_name)
-				// print("after unicast...\n")
 			} else {
 				// print("final priority determined\n")
 				// 2) Priority has been determined
 				old_message.Final_priority = new_message.Final_priority
+
 				//update message in priority queue
 				pq.mutex.Lock()
-				// print("updating pq..\n")
 				pq.pq.update(message_id_to_heap_message[old_message.Message_id],
 					old_message.Final_priority)
 				pq.mutex.Unlock()
@@ -553,7 +558,7 @@ func multicast_msg(msg message) {
 func handle_sending_transactions(conn net.Conn, node_name string) {
 	for {
 		job_queues[node_name].mutex.Lock()
-
+		print("sending mutex...\n")
 		for len(job_queues[node_name].job_queue) <= 0 {
 			// print("No more jobs to send at " + node_name + "\n\n")
 			job_queues[node_name].cond.Wait()
@@ -563,7 +568,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 
 		// completing a job and popping it off the jobqueue
 		curr_job := curr_job_queue[0] // message struct
-		// print("Message Sending: ", message_to_str(curr_job), "\n")
+		print("Message Sending: ", message_to_str(curr_job), "\n")
 		conn.Write([]byte(message_to_str(curr_job)))
 		if entry, ok := job_queues[node_name]; ok {
 			// Then we modify the copy
@@ -580,19 +585,14 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 }
 
 func deliver_messages() {
-	// print("delivering a message\n")
-
+	// Check pq to see if it has something in it
 	if len(pq.pq) != 0 {
 		print("len pq is not 0", len(pq.pq), "\n\n\n\n\n\n")
 
 		message_id_to_deliver := pq.pq.Peek().message_id
-		// print("message id to deliver: ", message_id_to_deliver, "\n")
 		message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
 
-		// print("after message to deliver: ", message_to_str(message_to_deliver))
-
-		// TODO: MADE CHANGE HERE
-		if message_to_deliver.Final_priority > 0 || len(message_to_deliver.Proposals) == total_nodes {
+		if message_to_deliver.Final_priority > 0 {
 			// print("final priority greater than 0...\n\n\n\n\n\n\n\n\n")
 			time.Sleep(5 * time.Millisecond)
 			// Update bank
@@ -600,10 +600,10 @@ func deliver_messages() {
 
 			// Update priqueue
 			pq.mutex.Lock()
-			hm := pq.pq.Peek()
-			m := message_info_map.message_info_map[hm.message_id]
+			// hm := pq.pq.Peek()
+			// m := message_info_map.message_info_map[hm.message_id]
 
-			print(message_to_str(m))
+			// print(message_to_str(m))
 			pq.pq.Pop()
 			pq.mutex.Unlock()
 
