@@ -127,13 +127,13 @@ func main() {
 	// 	fmt.Printf("%.2d:%s ", item.priority, item.message_id)
 	// }
 
-	// message parse testing
-	m := message{Data: "DEPOSIT third 23", Final_priority: 2.3}
-	process_message_data(m)
-	m = message{Data: "DEPOSIT first 22", Final_priority: 2.3}
-	process_message_data(m)
-	m = message{Data: "TRANSFER first -> second 22", Final_priority: 2.3}
-	process_message_data(m)
+	// // message parse testing
+	// m := message{Data: "DEPOSIT third 23", Final_priority: 2.3}
+	// process_message_data(m)
+	// m = message{Data: "DEPOSIT first 22", Final_priority: 2.3}
+	// process_message_data(m)
+	// m = message{Data: "TRANSFER first -> second 22", Final_priority: 2.3}
+	// process_message_data(m)
 
 }
 

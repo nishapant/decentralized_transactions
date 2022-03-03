@@ -22,6 +22,7 @@ var self_node_name = ""
 var self_node_id = 0
 var total_nodes = 0
 var node_info_map = make(map[string]node)
+var node_id_to_name = make(map[int]string)
 
 type node struct {
 	node_name         string
@@ -54,6 +55,7 @@ type counter_mutex struct {
 	counter int
 }
 
+// key: node name, val: job queue mutex struct
 var job_queues = make(map[string]job_queue_mutex)
 var counter = counter_mutex{counter: 0}
 
@@ -101,15 +103,22 @@ var message_info_map = message_info_mutex{ // message_info_map: {message_id: mes
 	message_info_map: make(map[string]message),
 }
 
+var message_id_to_heap_message = make(map[string](*heap_message))
+
 // TRANSACTIONS
 type account_mutex struct {
 	account_name string
 	balance      int
 }
 
-var bank = make(map[string]account_mutex)
+type bank_mutex struct {
+	mutex sync.Mutex
+	bank  map[string]int
+}
 
-/////// MAIN ///////
+var bank = bank_mutex{bank: make(map[string]int)}
+
+/////// MAIN & SETUP ///////
 
 func main() {
 	// Argument parsing
@@ -121,56 +130,16 @@ func main() {
 	args := os.Args[1:]
 	node_name := args[0]
 	config_file := args[1]
-
-	print("finished arg parsing\n")
+	self_node_name = node_name
 
 	// File Parsing
-	content, err := os.ReadFile(config_file)
-	handle_err(err)
+	content := parse_file(config_file)
 
-	content2 := string(content)
-	content3 := strings.Split(content2, "\n")
-
-	// Node creation
-	self_node_name = node_name
-	self_node_id, _ = strconv.Atoi(node_name[len(node_name)-1:])
-	print(self_node_id)
-
-	total_nodes, _ := strconv.Atoi(content3[0])
-
-	for i := 1; i <= total_nodes; i++ {
-		node_info := strings.Split(content3[i], " ")
-
-		// node_id, ip_addr: get additional fields
-		node_id, _ := strconv.Atoi(node_info[0][len(node_info[0])-1:])
-
-		ip_addr_net, err := net.LookupIP(node_info[1])
-		ip_addr := ip_addr_net[0].String()
-		handle_err(err)
-
-		new_node := node{
-			node_name:         node_info[0],
-			node_id:           node_id,
-			host_name:         node_info[1],
-			ip_addr:           ip_addr,
-			port_num:          node_info[2],
-			connected_to_self: false,
-		}
-
-		node_info_map[node_info[0]] = new_node
-	}
+	// Node Creation
+	create_node_data(content)
 
 	// Transaction setup
-	pq := make(PriorityQueue, 0)
-	heap.Init(&pq)
-
-	for node_name := range node_info_map {
-		// https://stackoverflow.com/questions/42605337/cannot-assign-to-struct-field-in-a-map
-		job_queues[node_name] = job_queue_mutex{job_queue: []message{}, mutex: &sync.Mutex{}}
-		job_queue_at_node := job_queues[node_name]
-		job_queue_at_node.cond = sync.NewCond(job_queues[node_name].mutex)
-		job_queues[node_name] = job_queue_at_node
-	}
+	create_queues()
 
 	// Connections
 	total_conns = (total_nodes - 1) * 2
@@ -189,6 +158,58 @@ func main() {
 	go add_transactions_to_queues(self_node.node_name)
 
 	wg.Wait()
+}
+
+func parse_file(config_file string) []string {
+	content, err := os.ReadFile(config_file)
+	handle_err(err)
+
+	content2 := string(content)
+	content3 := strings.Split(content2, "\n")
+	print(content3)
+
+	return content3
+}
+
+func create_node_data(content []string) {
+	// Node creation
+	total_nodes, _ := strconv.Atoi(content[0])
+
+	for i := 1; i <= total_nodes; i++ {
+		node_info := strings.Split(content[i], " ")
+
+		node_name := node_info[0]
+		node_id := i
+		node_id_to_name[i] = node_name
+
+		ip_addr_net, _ := net.LookupIP(node_info[1])
+		ip_addr := ip_addr_net[0].String()
+
+		new_node := node{
+			node_name:         node_name,
+			node_id:           node_id,
+			host_name:         node_info[1],
+			ip_addr:           ip_addr,
+			port_num:          node_info[2],
+			connected_to_self: false,
+		}
+
+		node_info_map[node_name] = new_node
+	}
+}
+
+func create_queues() {
+	pq := make(PriorityQueue, 0)
+	heap.Init(&pq)
+
+	for node_name := range node_info_map {
+		// https://stackoverflow.com/questions/42605337/cannot-assign-to-struct-field-in-a-map
+		job_queues[node_name] = job_queue_mutex{job_queue: []message{}, mutex: &sync.Mutex{}}
+		job_queue_at_node := job_queues[node_name]
+		job_queue_at_node.cond = sync.NewCond(job_queues[node_name].mutex)
+		job_queues[node_name] = job_queue_at_node
+	}
+
 }
 
 /////// 1) CONNECTIONS ///////
@@ -274,11 +295,9 @@ func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 	print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...\n")
 
 	// Sleep for a few seconds - make sure all the other nodes have established connections
-	// don't worry about multicast
 	time.Sleep(5 * time.Second)
 
 	// Move to handling transactions
-
 	if receiving {
 		handle_receiving_transactions(conn, node_name)
 	} else {
@@ -289,12 +308,12 @@ func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 ////// 2) TRANSACTIONS  ///////
 
 func handle_receiving_transactions(conn net.Conn, node_name string) {
-	print("hi")
 	for {
 		incoming, _ := bufio.NewReader(conn).ReadString('\n')
 		if incoming == "" {
 			continue
 		}
+
 		fmt.Print("Message Received:", string(incoming))
 
 		new_message := str_to_message(incoming)
@@ -319,6 +338,8 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				priority:   float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id)),
 			}
 
+			message_id_to_heap_message[incoming_message_id] = &h
+
 			counter.counter++
 			counter.mutex.Unlock()
 
@@ -342,9 +363,11 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 
 				multicast_msg(old_message)
 			}
-		} else { // If origin was another node
+		} else {
+			// If origin was another node
+
 			if old_message.Final_priority == -1.0 {
-				// Add proposal to Proposal array
+				// 1) Update priority array
 				sequence_num.mutex.Lock()
 				proposal := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
 				old_message.Proposals = combine_arrs(old_message.Proposals, []float64{proposal})
@@ -352,10 +375,17 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				sequence_num.mutex.Unlock()
 
 				// Add to jobqueue to be sent back to the original
-
+				incoming_node_name := node_id_to_name[incoming_node_id]
+				unicast_msg(old_message, incoming_node_name)
 			} else {
+				// 2) Priority has been determined
 				old_message.Final_priority = new_message.Final_priority
-				pq.update()
+				//update message in priority queue
+				pq.mutex.Lock()
+				pq.pq.update(message_id_to_heap_message[old_message.Message_id],
+					old_message.Message_id,
+					old_message.Final_priority)
+				pq.mutex.Unlock()
 			}
 		}
 
@@ -375,7 +405,7 @@ func add_transactions_to_queues(self_name string) {
 			continue
 		}
 
-		message_id := string(rand.Int())
+		message_id := strconv.Itoa(rand.Int())
 
 		sequence_num.mutex.Lock()
 		proposal := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
@@ -392,10 +422,21 @@ func add_transactions_to_queues(self_name string) {
 		}
 
 		// add this to every job_queue
-
 		multicast_msg(curr_message)
-
 	}
+}
+
+func unicast_msg(msg message, node_dest string) {
+	job_queue_at_node := job_queues[node_dest]
+
+	// Put on jobqueue
+	job_queue_at_node.mutex.Lock()
+	job_queue_at_node.job_queue = append(job_queues[node_dest].job_queue, msg)
+	job_queues[node_dest] = job_queue_at_node
+	job_queue_at_node.mutex.Unlock()
+
+	// Signal to wake up that thread
+	job_queues[node_dest].cond.Signal()
 }
 
 func multicast_msg(msg message) {
@@ -403,20 +444,20 @@ func multicast_msg(msg message) {
 		if node_name != self_node_name {
 			// Put on jobqueue
 			job_queue_at_node := job_queues[node_name]
+			job_queue_at_node.mutex.Lock()
 			job_queue_at_node.job_queue = append(job_queues[node_name].job_queue, msg)
 			job_queues[node_name] = job_queue_at_node
 
+			job_queue_at_node.mutex.Unlock()
 			// Signal to wake up that thread
 			job_queues[node_name].cond.Signal()
+
 		}
 	}
 }
 
 func handle_sending_transactions(conn net.Conn, node_name string) {
-	// print("in handle sending transactions\n")
 	// look into condition vars, sleep/wakeup on the condition variable
-	// since we have one consumer
-
 	job_queues[node_name].mutex.Lock()
 
 	curr_job_queue := job_queues[node_name].job_queue
@@ -461,40 +502,48 @@ func update_bank(m message) {
 	info := strings.Split(data, " ")
 
 	if info[0][:1] == "T" { // Transfer
-		// Preprocess
-		from := info[1]
-		to := info[3]
-		amount, _ := strconv.Atoi(info[4])
-
-		bank.mutex.Lock()
-
-		_, from_ok := bank.bank[from]
-
-		// Transaction can go through
-		if from_ok && bank.bank[from] >= amount {
-			_, to_ok := bank.bank[to]
-			if !to_ok {
-				bank.bank[to] = 0
-			}
-
-			bank.bank[from] -= amount
-			bank.bank[to] += amount
-		}
-
-		bank.mutex.Unlock()
+		transfer(info)
 	} else if info[0][:1] == "D" { // Deposit
-		account := info[1]
-		amount, _ := strconv.Atoi(info[2])
+		deposit(info)
+	}
+}
 
-		bank.mutex.Lock()
-		_, account_ok := bank.bank[account]
-		if !account_ok {
-			bank.bank[account] = 0
+func transfer(info []string) {
+	// Preprocess
+	from := info[1]
+	to := info[3]
+	amount, _ := strconv.Atoi(info[4])
+
+	bank.mutex.Lock()
+
+	_, from_ok := bank.bank[from]
+
+	// Transaction can go through
+	if from_ok && bank.bank[from] >= amount {
+		_, to_ok := bank.bank[to]
+		if !to_ok {
+			bank.bank[to] = 0
 		}
 
-		bank.bank[account] += amount
-		bank.mutex.Unlock()
+		bank.bank[from] -= amount
+		bank.bank[to] += amount
 	}
+
+	bank.mutex.Unlock()
+}
+
+func deposit(info []string) {
+	account := info[1]
+	amount, _ := strconv.Atoi(info[2])
+
+	bank.mutex.Lock()
+	_, account_ok := bank.bank[account]
+	if !account_ok {
+		bank.bank[account] = 0
+	}
+
+	bank.bank[account] += amount
+	bank.mutex.Unlock()
 }
 
 func print_balances() {
@@ -524,24 +573,6 @@ func print_balances() {
 
 ////// Helpers ///////
 
-func combine_arrs_int(arr1 []int, arr2 []int) []int {
-	slice := append(arr1, arr2...)
-
-	keys := make(map[int]bool)
-	list := []int{}
-
-	// If the key(values of the slice) is not equal
-	// to the already present value in new slice (list)
-	// then we append it. else we jump on another element.
-	for _, entry := range slice {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
-		}
-	}
-	return list
-}
-
 func combine_arrs(arr1 []float64, arr2 []float64) []float64 {
 	slice := append(arr1, arr2...)
 
@@ -559,22 +590,6 @@ func combine_arrs(arr1 []float64, arr2 []float64) []float64 {
 	}
 	return list
 }
-
-// func remove_duplicates(slice []float64) []float64 {
-// 	keys := make(map[float64]bool)
-// 	list := []float64{}
-
-// 	// If the key(values of the slice) is not equal
-// 	// to the already present value in new slice (list)
-// 	// then we append it. else we jump on another element.
-// 	for _, entry := range slice {
-// 		if _, value := keys[entry]; !value {
-// 			keys[entry] = true
-// 			list = append(list, entry)
-// 		}
-// 	}
-// 	return list
-// }
 
 func message_to_str(m message) string {
 	m_json, _ := json.Marshal(m)
@@ -608,7 +623,7 @@ func handle_err(err error) {
 	}
 }
 
-////// PRIORITY QUEUE //////
+////// PRIORITY QUEUE DEFINITION //////
 
 func (pq PriorityQueue) Len() int { return len(pq) }
 
@@ -656,6 +671,42 @@ func (pq *PriorityQueue) update(item *heap_message, message_id string, priority 
 }
 
 /////// Extraneous //////
+
+// func remove_duplicates(slice []float64) []float64 {
+// 	keys := make(map[float64]bool)
+// 	list := []float64{}
+
+// 	// If the key(values of the slice) is not equal
+// 	// to the already present value in new slice (list)
+// 	// then we append it. else we jump on another element.
+// 	for _, entry := range slice {
+// 		if _, value := keys[entry]; !value {
+// 			keys[entry] = true
+// 			list = append(list, entry)
+// 		}
+// 	}
+// 	return list
+// }
+
+// func combine_arrs_int(arr1 []int, arr2 []int) []int {
+// 	slice := append(arr1, arr2...)
+
+// 	keys := make(map[int]bool)
+// 	list := []int{}
+
+// 	// If the key(values of the slice) is not equal
+// 	// to the already present value in new slice (list)
+// 	// then we append it. else we jump on another element.
+// 	for _, entry := range slice {
+// 		if _, value := keys[entry]; !value {
+// 			keys[entry] = true
+// 			list = append(list, entry)
+// 		}
+// 	}
+// 	return list
+// }
+
+/////// literal garbage over here ////////
 
 // func recieve_conn_reqs(port string) {
 // 	serv_port := ":" + port
