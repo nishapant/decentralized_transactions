@@ -531,7 +531,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 			job_queues[node_name].cond.Wait()
 		}
 
-		print("completing a job\n")
+		// print("completing a job\n")
 		curr_job_queue := job_queues[node_name].job_queue
 
 		// completing a job and popping it off the jobqueue
@@ -539,7 +539,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 		conn.Write([]byte(message_to_str(curr_job)))
 		curr_job_queue = curr_job_queue[1:]
 
-		print("finished writing to connection...\n")
+		// print("finished writing to connection...\n")
 		job_queues[node_name].mutex.Unlock()
 	}
 }
