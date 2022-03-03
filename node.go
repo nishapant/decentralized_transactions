@@ -576,6 +576,7 @@ func deliver_messages() {
 		print("len pq is not 0\n")
 
 		message_id_to_deliver := pq.pq.Peek().message_id
+		print("message id to deliver: ", message_id_to_deliver, "\n")
 		message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
 
 		print("after message to deliver: ", message_to_str(message_to_deliver))
