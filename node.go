@@ -633,7 +633,7 @@ func combine_arrs(arr1 []float64, arr2 []float64) []float64 {
 
 func message_to_str(m message) string {
 	m_json, _ := json.Marshal(m)
-	m_str := string(m_json)
+	m_str := string(m_json) + "\n"
 
 	return m_str
 }
