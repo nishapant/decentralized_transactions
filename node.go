@@ -454,7 +454,7 @@ func multicast_msg(msg message) {
 			// Put on jobqueue
 			job_queue_at_node := job_queues[node_name]
 			job_queue_at_node.mutex.Lock()
-			print("\n job queue len 1")
+			print("\n job queue len x")
 			print(len(job_queues[node_name].job_queue))
 			print("\n")
 
@@ -463,7 +463,7 @@ func multicast_msg(msg message) {
 
 			print("node name\n")
 			print(node_name)
-			print("\n job queue len 2")
+			print("\n job queue len x")
 			print(len(job_queues[node_name].job_queue))
 			print("\n")
 
