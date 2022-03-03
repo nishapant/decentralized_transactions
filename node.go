@@ -143,6 +143,8 @@ func main() {
 
 	// Connections
 	total_conns = (total_nodes - 1) * 2
+	print("total conns ")
+	print("\n")
 	self_node := node_info_map[node_name]
 
 	print("begin threading")
