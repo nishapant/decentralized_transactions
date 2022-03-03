@@ -455,7 +455,7 @@ func add_transactions_to_queues(self_name string) {
 	for {
 		reader := bufio.NewReader(os.Stdin)
 		curr_transaction, _ := reader.ReadString('\n')
-		print("curr transaction", curr_transaction, "\n")
+		// print("curr transaction", curr_transaction, "\n")
 
 		if curr_transaction == "" {
 			continue
