@@ -493,21 +493,26 @@ func add_transactions_to_queues(self_name string) {
 func unicast_msg(msg message, node_dest string) {
 	print("node dest ", node_dest, "\n")
 	print("hi im in unicast\n")
-	job_queue_at_node := job_queues[node_dest]
 
 	print("got job queue\n")
+
 	// Put on jobqueue
-	job_queue_at_node.mutex.Lock()
+	job_queues[node_dest].mutex.Lock()
+
 	print("before appending\n")
+	job_queue_at_node := job_queues[node_dest]
 	job_queue_at_node.job_queue = append(job_queues[node_dest].job_queue, msg)
 	print("after appending\n")
 	job_queues[node_dest] = job_queue_at_node
 	print("????\n")
+
 	job_queue_at_node.mutex.Unlock()
 
 	print("signaling\n")
 	// Signal to wake up that thread
 	job_queues[node_dest].cond.Signal()
+
+	time.Sleep(10 * time.Millisecond)
 }
 
 func multicast_msg(msg message) {
@@ -515,14 +520,13 @@ func multicast_msg(msg message) {
 	for node_name := range node_info_map {
 		if node_name != self_node_name {
 			// Put on jobqueue
+
+			job_queues[node_name].mutex.Lock()
 			job_queue_at_node := job_queues[node_name]
-
-			job_queue_at_node.mutex.Lock()
-
 			job_queue_at_node.job_queue = append(job_queues[node_name].job_queue, msg)
 			job_queues[node_name] = job_queue_at_node
 
-			job_queue_at_node.mutex.Unlock()
+			job_queues[node_name].mutex.Unlock()
 
 			// Signal to wake up that thread
 			job_queues[node_name].cond.Signal()
@@ -548,6 +552,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 
 		// completing a job and popping it off the jobqueue
 		curr_job := curr_job_queue[0] // message struct
+		print("Message Sending: ", message_to_str(curr_job), "\n")
 		conn.Write([]byte(message_to_str(curr_job)))
 		curr_job_queue = curr_job_queue[1:]
 
