@@ -409,6 +409,8 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				proposal := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
 				old_message.Proposals = combine_arrs(old_message.Proposals, []float64{proposal})
 				sequence_num.sequence_num += 1
+				print("sleeping for 5 seconds...\n")
+				time.Sleep(5 * time.Second)
 				sequence_num.mutex.Unlock()
 
 				// Add to jobqueue to be sent back to the original
