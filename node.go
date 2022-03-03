@@ -399,7 +399,6 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			}
 		} else {
 			// If origin was another node
-
 			if old_message.Final_priority == -1.0 {
 				// 1) Update priority array
 				sequence_num.mutex.Lock()
@@ -486,19 +485,12 @@ func multicast_msg(msg message) {
 		if node_name != self_node_name {
 			// Put on jobqueue
 			job_queue_at_node := job_queues[node_name]
+
 			job_queue_at_node.mutex.Lock()
-			// print("\n job queue len x")
-			// print(len(job_queues[node_name].job_queue))
-			// print("\n")
 
 			job_queue_at_node.job_queue = append(job_queues[node_name].job_queue, msg)
 			job_queues[node_name] = job_queue_at_node
 
-			// print("node name\n")
-			// print(node_name)
-			// print("\n job queue len x")
-			// print(len(job_queues[node_name].job_queue))
-			// print("\n")
 			job_queue_at_node.mutex.Unlock()
 
 			// Signal to wake up that thread
@@ -512,25 +504,25 @@ func multicast_msg(msg message) {
 }
 
 func handle_sending_transactions(conn net.Conn, node_name string) {
-	print("handling sending\n")
-	// look into condition vars, sleep/wakeup on the condition variable
-	job_queues[node_name].mutex.Lock()
+	for {
+		job_queues[node_name].mutex.Lock()
 
-	for len(job_queues[node_name].job_queue) <= 0 {
-		print("No more jobs to send at " + node_name)
-		job_queues[node_name].cond.Wait()
+		for len(job_queues[node_name].job_queue) <= 0 {
+			print("No more jobs to send at " + node_name)
+			job_queues[node_name].cond.Wait()
+		}
+
+		print("completing a job\n")
+		curr_job_queue := job_queues[node_name].job_queue
+
+		// completing a job and popping it off the jobqueue
+		curr_job := curr_job_queue[0] // message struct
+		conn.Write([]byte(message_to_str(curr_job)))
+		curr_job_queue = curr_job_queue[1:]
+
+		print("finished writing to connection...\n")
+		job_queues[node_name].mutex.Unlock()
 	}
-
-	print("completing a job\n")
-	curr_job_queue := job_queues[node_name].job_queue
-
-	// completing a job and popping it off the jobqueue
-	curr_job := curr_job_queue[0] // message struct
-	conn.Write([]byte(message_to_str(curr_job)))
-	curr_job_queue = curr_job_queue[1:]
-
-	print("finished writing to connection...\n")
-	job_queues[node_name].mutex.Unlock()
 }
 
 func deliver_messages() {
