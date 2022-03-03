@@ -148,7 +148,7 @@ func main() {
 	print("begin threading")
 	// Threading Begins
 	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
-	wg.Add(3)
+	wg.Add(2)
 	// Servers
 	go recieve_conn_reqs(self_node.port_num)
 
@@ -156,7 +156,7 @@ func main() {
 	go send_conn_reqs(self_node.node_name)
 
 	// Handle transactions from generator.py
-	go add_transactions_to_queues(self_node.node_name)
+	// go add_transactions_to_queues(self_node.node_name)
 
 	wg.Wait()
 }
@@ -229,6 +229,7 @@ func send_conn_reqs(self_name string) {
 // sends a request to establish connection
 // Use preexisting thread to handle new connection
 func send_req(host string, port string, name string) {
+	print("sending req \n")
 	var conn net.Conn
 
 	for conn == nil {
@@ -282,6 +283,7 @@ func recieve_req(port string) {
 }
 
 func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
+	print("waiting\n")
 	// easiest thing to do: keep two connections between two nodes -> one for listening, other for writing
 	// Increment current number of connections
 	curr_conns.mutex.Lock()
@@ -309,6 +311,7 @@ func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 ////// 2) TRANSACTIONS  ///////
 
 func handle_receiving_transactions(conn net.Conn, node_name string) {
+	print("handling recieving\n")
 	for {
 		incoming, _ := bufio.NewReader(conn).ReadString('\n')
 		if incoming == "" {
@@ -398,6 +401,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 }
 
 func add_transactions_to_queues(self_name string) {
+	print("handling adding transactions\n")
 	// read from stdin
 	for {
 		reader := bufio.NewReader(os.Stdin)
@@ -458,6 +462,7 @@ func multicast_msg(msg message) {
 }
 
 func handle_sending_transactions(conn net.Conn, node_name string) {
+	print("handling sending\n")
 	// look into condition vars, sleep/wakeup on the condition variable
 	job_queues[node_name].mutex.Lock()
 
