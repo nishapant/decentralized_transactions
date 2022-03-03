@@ -367,15 +367,10 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			message_info_map.mutex.Unlock()
 
 			// Priqueue
-			print("before mutex\n")
 			counter.mutex.Lock()
-			print("sup")
 			sequence_num.mutex.Lock()
-			print("before seq num")
 			one := float64(sequence_num.sequence_num)
-			print("one: ", one, "\n")
 			two := (0.1 * float64(self_node_id))
-			print("two: ", two, "\n")
 			pri := one + two
 			sequence_num.mutex.Unlock()
 
@@ -397,7 +392,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 
 			print("pushing to priqueue\n")
 			pq.mutex.Lock()
-			pq.pq.Push(h)
+			pq.pq.Push(&h)
 			pq.mutex.Unlock()
 		}
 
