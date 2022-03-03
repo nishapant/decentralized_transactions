@@ -2,6 +2,8 @@ package main
 
 import (
 	"container/heap"
+	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -126,57 +128,84 @@ func main() {
 	// }
 
 	// message parse testing
-	m := message{Data: "TRANSFER first -> second 22", Final_priority: 2.3}
+	m := message{Data: "DEPOSIT third 23", Final_priority: 2.3}
 	process_message_data(m)
+	m = message{Data: "DEPOSIT first 22", Final_priority: 2.3}
+	process_message_data(m)
+	m = message{Data: "TRANSFER first -> second 22", Final_priority: 2.3}
+	process_message_data(m)
+
 }
 
 func process_message_data(m message) {
 	update_bank(m)
-	print_balances(m)
+	print_balances()
 }
 
 func update_bank(m message) {
 	data := m.Data
 	info := strings.Split(data, " ")
-	print(info[1])
+
 	if info[0][:1] == "T" { // Transfer
-		to := info[3]
+		// Preprocess
 		from := info[1]
+		to := info[3]
 		amount, _ := strconv.Atoi(info[4])
 
 		bank.mutex.Lock()
-		_, to_ok := bank.bank[to]
-		if !to_ok {
-			bank.bank[to] = 0
-		}
 
 		_, from_ok := bank.bank[from]
+
+		// Transaction can go through
 		if from_ok && bank.bank[from] >= amount {
-			// Transaction can go through
+			_, to_ok := bank.bank[to]
+			if !to_ok {
+				bank.bank[to] = 0
+			}
+
 			bank.bank[from] -= amount
 			bank.bank[to] += amount
 		}
 
 		bank.mutex.Unlock()
-		print(to)
-		print(from)
-		print(amount)
 	} else if info[0][:1] == "D" { // Deposit
 		account := info[1]
-		amount := info[2]
+		amount, _ := strconv.Atoi(info[2])
 
+		bank.mutex.Lock()
 		_, account_ok := bank.bank[account]
 		if !account_ok {
-			bank.bank[account_ok] = 0
+			bank.bank[account] = 0
 		}
 
-		print(account)
-		print(amount)
+		bank.bank[account] += amount
+		bank.mutex.Unlock()
 	}
 }
 
-func print_balances(m message) {
+func print_balances() {
+	bank.mutex.Lock()
+	balances := "BALANCES"
+	accs := make([]string, 0, len(bank.bank))
+	for k := range bank.bank {
+		accs = append(accs, k)
+	}
+	sort.Strings(accs)
 
+	for _, acc := range accs {
+		if bank.bank[acc] != 0 {
+			balances += " "
+			balances += acc
+			balances += ": "
+			amount := strconv.Itoa(bank.bank[acc])
+			balances += amount
+		}
+	}
+
+	balances += "\n"
+	bank.mutex.Unlock()
+
+	fmt.Println(balances)
 }
 
 //////////////////

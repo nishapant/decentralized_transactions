@@ -5,8 +5,10 @@ import (
 	"container/heap"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -57,8 +59,8 @@ var counter = counter_mutex{counter: 0}
 
 // Message that is sent between processes
 type message struct {
-	Data           string
-	DeliveredIds   []int // the process ids where the message is delivered
+	Data string
+	// DeliveredIds   []int // the process ids where the message is delivered
 	Origin_id      int
 	Proposals      []float64 // null or data
 	Message_id     string    // hash
@@ -176,12 +178,15 @@ func main() {
 
 	// Threading Begins
 	// https://medium.com/@greenraccoon23/multi-thread-for-loops-easily-and-safely-in-go-a2e915302f8b
-	wg.Add(2)
+	wg.Add(3)
 	// Servers
 	go recieve_conn_reqs(self_node.port_num)
 
 	// Clients
 	go send_conn_reqs(self_node.node_name)
+
+	// Handle transactions from generator.py
+	go add_transactions_to_queues(self_node.node_name)
 
 	wg.Wait()
 }
@@ -287,6 +292,9 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 	print("hi")
 	for {
 		incoming, _ := bufio.NewReader(conn).ReadString('\n')
+		if incoming == "" {
+			continue
+		}
 		fmt.Print("Message Received:", string(incoming))
 
 		new_message := str_to_message(incoming)
@@ -303,9 +311,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			message_info_map.message_info_map[incoming_message_id] = new_message
 			message_info_map.mutex.Unlock()
 
-			// heap
-			// thanks <3no
-			// bye
+			// Priqueue
 			counter.mutex.Lock()
 			h := heap_message{
 				message_id: incoming_message_id,
@@ -324,29 +330,18 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		old_message := message_info_map.message_info_map[incoming_message_id]
 
 		// ISIS algo
-		if incoming_node_id == self_node_id { // If origin is ourselves (receiving a proposed priority for a message we sent)
+		// If origin is ourselves (receiving a proposed priority for a message we sent)
+		if incoming_node_id == self_node_id {
 			old_message.Proposals = combine_arrs(old_message.Proposals, incoming_message_proposals)
 
 			// if proposals_arr = full
-			if len(old_message.Proposals) == total_nodes-1 {
+			if len(old_message.Proposals) == total_nodes {
 				// Determine final priority
 				final_pri := max_arr(old_message.Proposals)
 				old_message.Final_priority = final_pri
 
-				// send out the final priority to every other node
-				for node_name := range node_info_map {
-					if node_name != self_node_name {
-						// Put on jobqueue
-						job_queue_at_node := job_queues[node_name]
-						job_queue_at_node.job_queue = append(job_queues[node_name].job_queue, old_message)
-						job_queues[node_name] = job_queue_at_node
-
-						// Signal to wake up that thread
-						job_queues[node_name].cond.Signal()
-					}
-				}
+				multicast_msg(old_message)
 			}
-
 		} else { // If origin was another node
 			if old_message.Final_priority == -1.0 {
 				// Add proposal to Proposal array
@@ -360,6 +355,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 
 			} else {
 				old_message.Final_priority = new_message.Final_priority
+				pq.update()
 			}
 		}
 
@@ -367,6 +363,52 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 
 		// Check for delivery
 		deliver_messages()
+	}
+}
+
+func add_transactions_to_queues(self_name string) {
+	// read from stdin
+	for {
+		reader := bufio.NewReader(os.Stdin)
+		curr_transaction, _ := reader.ReadString('\n')
+		if curr_transaction == "" {
+			continue
+		}
+
+		message_id := string(rand.Int())
+
+		sequence_num.mutex.Lock()
+		proposal := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
+		proposals := []float64{proposal}
+		sequence_num.sequence_num += 1
+		sequence_num.mutex.Unlock()
+
+		curr_message := message{
+			Data:           curr_transaction,
+			Origin_id:      self_node_id,
+			Proposals:      proposals,
+			Message_id:     message_id,
+			Final_priority: -1,
+		}
+
+		// add this to every job_queue
+
+		multicast_msg(curr_message)
+
+	}
+}
+
+func multicast_msg(msg message) {
+	for node_name := range node_info_map {
+		if node_name != self_node_name {
+			// Put on jobqueue
+			job_queue_at_node := job_queues[node_name]
+			job_queue_at_node.job_queue = append(job_queues[node_name].job_queue, msg)
+			job_queues[node_name] = job_queue_at_node
+
+			// Signal to wake up that thread
+			job_queues[node_name].cond.Signal()
+		}
 	}
 }
 
@@ -393,24 +435,91 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 }
 
 func deliver_messages() {
-	message_id_to_deliver := pq.pq.Peek().message_id
-	message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
+	if len(pq.pq) != 0 {
+		message_id_to_deliver := pq.pq.Peek().message_id
+		message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
 
-	if len(pq.pq) != 0 && message_to_deliver.Final_priority > 0 {
-		// Update bank
-		parse_message_data(message_to_deliver)
+		if message_to_deliver.Final_priority > 0 {
+			// Update bank
+			process_message_data(message_to_deliver)
 
-		// Update priqueue
-		pq.mutex.Lock()
-		pq.pq.Pop()
-		pq.mutex.Unlock()
+			// Update priqueue
+			pq.mutex.Lock()
+			pq.pq.Pop()
+			pq.mutex.Unlock()
+		}
 	}
 }
 
-func parse_message_data(m message) {
-	// data := message.data
+func process_message_data(m message) {
+	update_bank(m)
+	print_balances()
+}
 
-	// if data[:1]
+func update_bank(m message) {
+	data := m.Data
+	info := strings.Split(data, " ")
+
+	if info[0][:1] == "T" { // Transfer
+		// Preprocess
+		from := info[1]
+		to := info[3]
+		amount, _ := strconv.Atoi(info[4])
+
+		bank.mutex.Lock()
+
+		_, from_ok := bank.bank[from]
+
+		// Transaction can go through
+		if from_ok && bank.bank[from] >= amount {
+			_, to_ok := bank.bank[to]
+			if !to_ok {
+				bank.bank[to] = 0
+			}
+
+			bank.bank[from] -= amount
+			bank.bank[to] += amount
+		}
+
+		bank.mutex.Unlock()
+	} else if info[0][:1] == "D" { // Deposit
+		account := info[1]
+		amount, _ := strconv.Atoi(info[2])
+
+		bank.mutex.Lock()
+		_, account_ok := bank.bank[account]
+		if !account_ok {
+			bank.bank[account] = 0
+		}
+
+		bank.bank[account] += amount
+		bank.mutex.Unlock()
+	}
+}
+
+func print_balances() {
+	bank.mutex.Lock()
+	balances := "BALANCES"
+	accs := make([]string, 0, len(bank.bank))
+	for k := range bank.bank {
+		accs = append(accs, k)
+	}
+	sort.Strings(accs)
+
+	for _, acc := range accs {
+		if bank.bank[acc] != 0 {
+			balances += " "
+			balances += acc
+			balances += ": "
+			amount := strconv.Itoa(bank.bank[acc])
+			balances += amount
+		}
+	}
+
+	balances += "\n"
+	bank.mutex.Unlock()
+
+	fmt.Println(balances)
 }
 
 ////// Helpers ///////
@@ -451,21 +560,21 @@ func combine_arrs(arr1 []float64, arr2 []float64) []float64 {
 	return list
 }
 
-func remove_duplicates(slice []float64) []float64 {
-	keys := make(map[float64]bool)
-	list := []float64{}
+// func remove_duplicates(slice []float64) []float64 {
+// 	keys := make(map[float64]bool)
+// 	list := []float64{}
 
-	// If the key(values of the slice) is not equal
-	// to the already present value in new slice (list)
-	// then we append it. else we jump on another element.
-	for _, entry := range slice {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
-		}
-	}
-	return list
-}
+// 	// If the key(values of the slice) is not equal
+// 	// to the already present value in new slice (list)
+// 	// then we append it. else we jump on another element.
+// 	for _, entry := range slice {
+// 		if _, value := keys[entry]; !value {
+// 			keys[entry] = true
+// 			list = append(list, entry)
+// 		}
+// 	}
+// 	return list
+// }
 
 func message_to_str(m message) string {
 	m_json, _ := json.Marshal(m)
