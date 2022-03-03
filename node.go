@@ -195,6 +195,7 @@ func create_node_data(content []string) {
 		node_id_to_name[i] = node_name
 
 		if node_name == self_node_name {
+			print("declaring self node id:", self_node_id, "\n")
 			self_node_id = node_id
 		}
 
@@ -365,7 +366,11 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			// Priqueue
 			print("before mutex\n")
 			counter.mutex.Lock()
+
+			sequence_num.mutex.Lock()
 			pri := float64(sequence_num.sequence_num) + (0.1 * float64(self_node_id))
+			sequence_num.mutex.Unlock()
+
 			print("pri: ", pri, "\n")
 
 			h := heap_message{
