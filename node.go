@@ -471,11 +471,12 @@ func multicast_msg(msg message) {
 			// print("\n job queue len x")
 			// print(len(job_queues[node_name].job_queue))
 			// print("\n")
+			job_queue_at_node.mutex.Unlock()
 
 			// Signal to wake up that thread
 			job_queues[node_name].cond.Signal()
 
-			job_queue_at_node.mutex.Unlock()
+			time.Sleep(10 * time.Millisecond)
 		}
 	}
 }
