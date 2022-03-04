@@ -735,6 +735,7 @@ func str_to_message(m_str string) message {
 func random_hash() string {
 	num_arr := []byte{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
 	hash := ""
+	rand.Seed(time.Now().UnixNano())
 	for i := 0; i <= 64; i++ {
 		rand_int := rand.Intn(len(num_arr))
 		hash += string(num_arr[rand_int])
