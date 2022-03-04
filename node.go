@@ -233,6 +233,7 @@ func create_queues() {
 
 // Iterate through all the nodes that arent ourselves and establish a connection as client
 func send_conn_reqs(self_name string) {
+	time.Sleep(time.Second * 3)
 	number := 0
 	for name, info := range node_info_map {
 		if name != self_name {
