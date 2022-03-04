@@ -270,7 +270,7 @@ func send_req(host string, port string, name string) {
 
 func recieve_conn_reqs(port_ string) {
 	number := 0
-	for i := 0; i < total_conns/2; i++ {
+	for i := 0; i < total_nodes-1; i++ {
 		print("reciving conwaefwef\n")
 		port_int, _ := strconv.Atoi(port_)
 		port_int = port_int + number
