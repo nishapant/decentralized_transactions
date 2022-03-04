@@ -338,7 +338,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			continue
 		}
 
-		// print("Message Received:", string(incoming))
+		print("Message Received:", string(incoming))
 
 		new_message := str_to_message(incoming)
 		incoming_message_id := new_message.Message_id
@@ -434,6 +434,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			}
 		}
 
+		print("Message recieved after update:", message_to_str(old_message), "\n")
 		message_info_map.mutex.Lock()
 		message_info_map.message_info_map[incoming_message_id] = old_message
 		message_info_map.mutex.Unlock()
@@ -576,6 +577,7 @@ func deliver_messages() {
 		print("len pq is not 0", len(pq.pq), "\n\n\n\n\n\n")
 
 		message_id_to_deliver := pq.pq.Peek().message_id
+		print("messageid: ", message_id_to_deliver, "\n")
 		message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
 
 		if message_to_deliver.Final_priority > 0 {
