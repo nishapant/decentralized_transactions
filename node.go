@@ -629,13 +629,9 @@ func update_bank(m message) {
 
 	info := strings.Split(data, " ")
 
-	print("updating bank with data:", data, "\n")
-
 	if info[0][:1] == "T" { // Transfer
-		print("transfer")
 		transfer(info)
 	} else if info[0][:1] == "D" { // Deposit
-		print("deposit")
 		deposit(info)
 	}
 }
@@ -668,20 +664,13 @@ func deposit(info []string) {
 	account := info[1]
 	amount, _ := strconv.Atoi(info[2])
 
-	// print("amount depositing: ", amount, "\n")
-
 	bank.mutex.Lock()
 	_, account_ok := bank.bank[account]
 	if !account_ok {
 		bank.bank[account] = 0
 	}
 
-	print("account: ", account, "\n")
-	print("total before deposit: ", bank.bank[account], "\n")
-
 	bank.bank[account] += amount
-
-	print("total after: ", bank.bank[account], "\n")
 	bank.mutex.Unlock()
 }
 
@@ -695,9 +684,7 @@ func print_balances() {
 	sort.Strings(accs)
 
 	for _, acc := range accs {
-		print("in for loop")
 		if bank.bank[acc] != 0 {
-			print("bank acc: ", acc)
 			balances += " "
 			balances += acc
 			balances += ": "
