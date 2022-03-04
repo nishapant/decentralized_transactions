@@ -612,6 +612,7 @@ func update_processing_times(message_id string) {
 		print(proc_time_map.proc_time)
 	}
 	proc_time_map.mutex.Unlock()
+	os.Exit(1)
 }
 
 func process_message_data(m message) {
