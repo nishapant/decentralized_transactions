@@ -233,12 +233,16 @@ func create_queues() {
 
 // Iterate through all the nodes that arent ourselves and establish a connection as client
 func send_conn_reqs(self_name string) {
+	number := 0
 	for name, info := range node_info_map {
 		if name != self_name {
 			host := info.host_name
-			port := info.port_num
+			port_int, _ := strconv.Atoi(info.port_num)
+			port_int = port_int + number
+			port := strconv.Itoa(port_int)
 			go send_req(host, port, name)
 		}
+		number += 1
 	}
 	// wg.Wait()
 }
@@ -256,6 +260,7 @@ func send_req(host string, port string, name string) {
 		if err != nil {
 			continue
 		} else {
+			print("sending...")
 			wait_for_connections(conn, name, false)
 			break
 		}
@@ -264,8 +269,7 @@ func send_req(host string, port string, name string) {
 }
 
 func recieve_conn_reqs(port_ string) {
-	number := 1
-	print("total conns: ", total_conns)
+	number := 0
 	for i := 0; i < total_conns/2; i++ {
 		print("reciving conwaefwef\n")
 		port_int, _ := strconv.Atoi(port_)
