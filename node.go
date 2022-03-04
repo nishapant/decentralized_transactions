@@ -338,7 +338,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			continue
 		}
 
-		print("Message Received:", string(incoming))
+		// print("Message Received:", string(incoming))
 
 		new_message := str_to_message(incoming)
 		incoming_message_id := new_message.Message_id
@@ -435,7 +435,7 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			}
 		}
 
-		print("Message recieved after update:", message_to_str(old_message), "\n")
+		// print("Message recieved after update:", message_to_str(old_message), "\n")
 		message_info_map.mutex.Lock()
 		message_info_map.message_info_map[incoming_message_id] = old_message
 		message_info_map.mutex.Unlock()
@@ -567,14 +567,14 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 func deliver_messages() {
 	// Check pq to see if it has something in it
 	if len(pq.pq) != 0 {
-		print("len pq is not 0", len(pq.pq), "\n\n\n\n\n\n")
+		// print("len pq is not 0", len(pq.pq), "\n\n\n\n\n\n")
 
 		message_id_to_deliver := pq.pq.Peek().message_id
-		print("messageid: ", message_id_to_deliver, "\n")
+		// print("messageid: ", message_id_to_deliver, "\n")
 		message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
 
 		if message_to_deliver.Final_priority > 0 {
-			print("final priority greater than 0...\n\n\n\n\n\n\n\n\n")
+			// print("final priority greater than 0...\n\n\n\n\n\n\n\n\n")
 			// Update processing time
 			update_processing_times(message_id_to_deliver)
 
@@ -592,17 +592,18 @@ func deliver_messages() {
 }
 
 func update_processing_times(message_id string) {
-	print("in update proc times..\n")
+	// print("in update proc times..\n")
 	print(proc_time_map.proc_time)
 	proc_time_map.mutex.Lock()
 	start_time := proc_time_map.proc_time_start[message_id]
 	end_time := time.Now().Unix()
 	diff := end_time - start_time
 	proc_time_map.proc_time = append(proc_time_map.proc_time, diff)
-	if len(proc_time_map.proc_time)%200 == 0 {
+	if len(proc_time_map.proc_time)%10 == 0 {
 		print(proc_time_map.proc_time)
 	}
 	proc_time_map.mutex.Unlock()
+	os.Exit(1)
 }
 
 func process_message_data(m message) {
