@@ -151,7 +151,7 @@ func main() {
 	create_queues()
 
 	// Connections
-	total_conns = (total_nodes - 1) * 2
+	total_conns = (total_nodes * total_nodes) - total_nodes
 	self_node := node_info_map[node_name]
 
 	// Threading Begins
@@ -269,6 +269,7 @@ func send_req(host string, port string, name string) {
 
 func recieve_conn_reqs(port_ string) {
 	number := 1
+	print("total conns: ", total_conns)
 	for i := 0; i < total_conns/2; i++ {
 		print("reciving conwaefwef\n")
 		port_int, _ := strconv.Atoi(port_)
