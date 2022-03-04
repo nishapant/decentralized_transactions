@@ -151,7 +151,7 @@ func main() {
 	create_queues()
 
 	// Connections
-	total_conns = (total_nodes * total_nodes) - total_nodes
+	total_conns = (total_nodes - 1) * 2 // (total_nodes * total_nodes) - total_nodes
 	self_node := node_info_map[node_name]
 
 	// Threading Begins
