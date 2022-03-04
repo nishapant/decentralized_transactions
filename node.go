@@ -245,7 +245,7 @@ func send_conn_reqs(self_name string) {
 			port2 := strconv.Itoa(port_int)
 
 			go send_req(host, port2, name)
-			// number += 1
+
 		}
 	}
 	wg.Wait()
@@ -254,7 +254,7 @@ func send_conn_reqs(self_name string) {
 // sends a request to establish connection
 // Use preexisting thread to handle new connection
 func send_req(host string, port string, name string) {
-	print("sending req \n")
+	// print("sending req \n")
 	var conn net.Conn
 
 	for conn == nil {
@@ -264,7 +264,7 @@ func send_req(host string, port string, name string) {
 		if err != nil {
 			continue
 		} else {
-			print("sending...\n")
+			// print("sending...\n")
 			wait_for_connections(conn, name, false)
 			break
 		}
@@ -324,7 +324,7 @@ func recieve_req(port string) {
 }
 
 func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
-	print("waiting\n")
+	// print("waiting\n")
 	// easiest thing to do: keep two connections between two nodes -> one for listening, other for writing
 	// Increment current number of connections
 	curr_conns.mutex.Lock()
@@ -336,7 +336,7 @@ func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 	}
 
 	sec := 5
-	print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...\n")
+	// print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...\n")
 
 	// Sleep for a few seconds - make sure all the other nodes have established connections
 	time.Sleep(5 * time.Second)
@@ -615,14 +615,16 @@ func deliver_messages() {
 
 func update_processing_times(message_id string) {
 	// print("in update proc times..\n")
-	print(proc_time_map.proc_time)
+	// print(proc_time_map.proc_time)
 	proc_time_map.mutex.Lock()
 	start_time := proc_time_map.proc_time_start[message_id]
 	end_time := time.Now().Unix()
 	diff := end_time - start_time
 	proc_time_map.proc_time = append(proc_time_map.proc_time, diff)
 	if len(proc_time_map.proc_time)%10 == 0 {
-		print(proc_time_map.proc_time)
+		// print(proc_time_map.proc_time)
+		print(strings.Trim(strings.Join(strings.Fields(fmt.Sprint(proc_time_map.proc_time)), ","), "[]"))
+
 	}
 	proc_time_map.mutex.Unlock()
 }
