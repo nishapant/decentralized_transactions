@@ -202,13 +202,16 @@ func create_node_data(content []string) {
 
 		ip_addr_net, _ := net.LookupIP(node_info[1])
 		ip_addr := ip_addr_net[0].String()
+		port_int, _ := strconv.Atoi(node_info[2])
+		port_int = port_int + i
+		port := strconv.Itoa(port_int)
 
 		new_node := node{
 			node_name: node_name,
 			node_id:   node_id,
 			host_name: node_info[1],
 			ip_addr:   ip_addr,
-			port_num:  node_info[2],
+			port_num:  port,
 		}
 
 		node_info_map[node_name] = new_node
@@ -233,16 +236,13 @@ func create_queues() {
 
 // Iterate through all the nodes that arent ourselves and establish a connection as client
 func send_conn_reqs(self_name string) {
-	time.Sleep(time.Second * 3)
-	number := 0
+	// time.Sleep(time.Second * 3)
 	for name, info := range node_info_map {
 		if name != self_name {
 			host := info.host_name
-			port_int, _ := strconv.Atoi(info.port_num)
-			port_int = port_int + number
-			port := strconv.Itoa(port_int)
+			port := info.port_num
 			go send_req(host, port, name)
-			number += 1
+			// number += 1
 		}
 	}
 	wg.Wait()
@@ -269,16 +269,23 @@ func send_req(host string, port string, name string) {
 
 }
 
-func recieve_conn_reqs(port_ string) {
-	number := 0
+func recieve_conn_reqs(port string) {
+	// for name, info := range node_info_map {
+	// 	if name != self_name {
+	// 		port := info.port_num
+	// 		go recieve_req(port)
+	// 	}
+	// }
+	// number := 0
 	for i := 0; i < total_nodes-1; i++ {
 		print("reciving conwaefwef\n")
-		port_int, _ := strconv.Atoi(port_)
-		port_int = port_int + number
-		port := strconv.Itoa(port_int)
+		// port_int, _ := strconv.Atoi(port_)
+		// port_int = port_int + number
+		// port := strconv.Itoa(port_int)
 		go recieve_req(port)
-		number += 1
+		// number += 1
 	}
+
 	wg.Wait()
 }
 
