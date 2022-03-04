@@ -1,3 +1,5 @@
+package main
+
 /////// Extraneous //////
 
 // func remove_duplicates(slice []float64) []float64 {

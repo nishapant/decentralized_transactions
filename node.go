@@ -309,7 +309,7 @@ func recieve_req(port string) {
 }
 
 func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
-	// print("waiting\n")
+	print("waiting\n")
 	// easiest thing to do: keep two connections between two nodes -> one for listening, other for writing
 	// Increment current number of connections
 	curr_conns.mutex.Lock()
@@ -320,8 +320,8 @@ func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 		time.Sleep(20 * time.Millisecond)
 	}
 
-	// sec := 5
-	// print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...\n")
+	sec := 5
+	print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...\n")
 
 	// Sleep for a few seconds - make sure all the other nodes have established connections
 	time.Sleep(5 * time.Second)
