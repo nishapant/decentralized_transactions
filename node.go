@@ -25,13 +25,12 @@ var node_info_map = make(map[string]node)
 var node_id_to_name = make(map[int]string)
 
 type node struct {
-	node_name         string
-	node_id           int
-	host_name         string
-	ip_addr           string
-	port_num          string
-	connected_to_self bool
-	is_ready          bool // connected to all nodes in the network
+	node_name string
+	node_id   int
+	host_name string
+	ip_addr   string
+	port_num  string
+	is_ready  bool // connected to all nodes in the network
 }
 
 // CONNECTIONS
@@ -205,12 +204,11 @@ func create_node_data(content []string) {
 		ip_addr := ip_addr_net[0].String()
 
 		new_node := node{
-			node_name:         node_name,
-			node_id:           node_id,
-			host_name:         node_info[1],
-			ip_addr:           ip_addr,
-			port_num:          node_info[2],
-			connected_to_self: false,
+			node_name: node_name,
+			node_id:   node_id,
+			host_name: node_info[1],
+			ip_addr:   ip_addr,
+			port_num:  node_info[2],
 		}
 
 		node_info_map[node_name] = new_node
@@ -427,7 +425,6 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			} else {
 				// 2) Priority has been determined
 				old_message.Final_priority = new_message.Final_priority
-				// print("Found final priority: ", old_message.Final_priority, "\n")
 
 				//update message in priority queue
 				pq.mutex.Lock()
