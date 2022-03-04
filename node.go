@@ -241,8 +241,8 @@ func send_conn_reqs(self_name string) {
 			port_int = port_int + number
 			port := strconv.Itoa(port_int)
 			go send_req(host, port, name)
+			number += 1
 		}
-		number += 1
 	}
 	wg.Wait()
 }
@@ -276,7 +276,7 @@ func recieve_conn_reqs(port_ string) {
 		port_int = port_int + number
 		port := strconv.Itoa(port_int)
 		go recieve_req(port)
-		number++
+		number += 1
 	}
 	wg.Wait()
 }
