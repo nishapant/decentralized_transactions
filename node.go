@@ -314,8 +314,8 @@ func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 		time.Sleep(20 * time.Millisecond)
 	}
 
-	sec := 5
-	print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...\n")
+	// sec := 5
+	// print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...\n")
 
 	// Sleep for a few seconds - make sure all the other nodes have established connections
 	time.Sleep(5 * time.Second)
@@ -576,7 +576,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 func deliver_messages() {
 	// Check pq to see if it has something in it
 	if len(pq.pq) != 0 {
-		// print("len pq is not 0", len(pq.pq), "\n\n\n\n\n\n")
+		print("len pq is not 0", len(pq.pq), "\n\n\n\n\n\n")
 
 		message_id_to_deliver := pq.pq.Peek().message_id
 		message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
@@ -603,6 +603,8 @@ func deliver_messages() {
 }
 
 func update_processing_times(message_id string) {
+	print("in update proc times..\n")
+	print(proc_time_map.proc_time)
 	proc_time_map.mutex.Lock()
 	start_time := proc_time_map.proc_time_start[message_id]
 	end_time := time.Now().Unix()
