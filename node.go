@@ -250,7 +250,7 @@ func send_conn_reqs(self_name string) {
 // sends a request to establish connection
 // Use preexisting thread to handle new connection
 func send_req(host string, port string, name string) {
-	// print("sending req \n")
+	print("sending req \n")
 	var conn net.Conn
 
 	for conn == nil {
@@ -260,7 +260,7 @@ func send_req(host string, port string, name string) {
 		if err != nil {
 			continue
 		} else {
-			print("sending...")
+			print("sending...\n")
 			wait_for_connections(conn, name, false)
 			break
 		}
