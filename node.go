@@ -749,8 +749,6 @@ func random_hash() string {
 		hash += string(num_arr[rand_int])
 	}
 
-	print(hash)
-
 	return hash
 }
 
