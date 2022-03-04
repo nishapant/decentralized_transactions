@@ -240,6 +240,7 @@ func send_conn_reqs(self_name string) {
 			go send_req(host, port, name)
 		}
 	}
+	wg.Wait()
 }
 
 // sends a request to establish connection
@@ -249,7 +250,7 @@ func send_req(host string, port string, name string) {
 	var conn net.Conn
 
 	for conn == nil {
-		ip := host + ":" + port
+		ip := host + ":" + "0"
 		conn, err := net.Dial("tcp", ip)
 
 		if err != nil {
@@ -268,6 +269,7 @@ func recieve_conn_reqs(port string) {
 		// print("in receive conn req for loop \n")
 		go recieve_req(port)
 	}
+	wg.Wait()
 }
 
 func recieve_req(port string) {
