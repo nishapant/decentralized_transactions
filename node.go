@@ -383,7 +383,6 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 
 		// ISIS algo
 		// If origin is ourselves (receiving a proposed priority for a message we sent)
-		// print("incoming node id: ", incoming_node_origin_id)
 		if incoming_node_origin_id == self_node_id {
 			if len(old_message.Proposals) >= total_nodes {
 				// Determine final priority
@@ -431,6 +430,10 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 				pq.pq.update(message_id_to_heap_message[old_message.Message_id],
 					old_message.Final_priority)
 				pq.mutex.Unlock()
+
+				message_info_map.mutex.Lock()
+				message_info_map.message_info_map[incoming_message_id] = old_message
+				message_info_map.mutex.Unlock()
 			}
 		}
 
@@ -439,14 +442,12 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		message_info_map.message_info_map[incoming_message_id] = old_message
 		message_info_map.mutex.Unlock()
 
-		// print("reaching delivery\n")
 		// Check for delivery
 		deliver_messages()
 	}
 }
 
 func add_transactions_to_queues(self_name string) {
-	// print("handling adding transactions\n")
 	// read from stdin
 	for {
 		reader := bufio.NewReader(os.Stdin)
@@ -545,9 +546,8 @@ func multicast_msg(msg message) {
 func handle_sending_transactions(conn net.Conn, node_name string) {
 	for {
 		job_queues[node_name].mutex.Lock()
-		// print("sending mutex...\n")
+
 		for len(job_queues[node_name].job_queue) <= 0 {
-			// print("No more jobs to send at " + node_name + "\n\n")
 			job_queues[node_name].cond.Wait()
 		}
 
@@ -555,8 +555,8 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 
 		// completing a job and popping it off the jobqueue
 		curr_job := curr_job_queue[0] // message struct
-		// print("Message Sending: ", message_to_str(curr_job), "\n")
 		conn.Write([]byte(message_to_str(curr_job)))
+
 		if entry, ok := job_queues[node_name]; ok {
 			// Then we modify the copy
 			entry.job_queue = curr_job_queue[1:]
@@ -566,8 +566,6 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 		}
 
 		job_queues[node_name].mutex.Unlock()
-
-		// print("finished writing to connection...\n")
 	}
 }
 
@@ -591,10 +589,6 @@ func deliver_messages() {
 
 			// Update priqueue
 			pq.mutex.Lock()
-			// hm := pq.pq.Peek()
-			// m := message_info_map.message_info_map[hm.message_id]
-
-			// print(message_to_str(m))
 			pq.pq.Pop()
 			pq.mutex.Unlock()
 
