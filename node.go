@@ -335,7 +335,7 @@ func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 		time.Sleep(20 * time.Millisecond)
 	}
 
-	sec := 5
+	// sec := 5
 	// print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...\n")
 
 	// Sleep for a few seconds - make sure all the other nodes have established connections
