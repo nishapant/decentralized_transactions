@@ -623,7 +623,7 @@ func update_processing_times(message_id string) {
 	proc_time_map.proc_time = append(proc_time_map.proc_time, diff)
 	if len(proc_time_map.proc_time)%50 == 0 {
 		// print(proc_time_map.proc_time)
-		// print(strings.Trim(strings.Join(strings.Fields(fmt.Sprint(proc_time_map.proc_time)), ","), "[]"))
+		print(strings.Trim(strings.Join(strings.Fields(fmt.Sprint(proc_time_map.proc_time)), ","), "[]"))
 
 	}
 	proc_time_map.mutex.Unlock()
