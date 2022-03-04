@@ -708,7 +708,7 @@ func print_balances() {
 		}
 	}
 
-	balances += "\n"
+	// balances += "\n"
 	bank.mutex.Unlock()
 
 	fmt.Println(balances)
