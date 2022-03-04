@@ -267,9 +267,14 @@ func send_req(host string, port string, name string) {
 
 }
 
-func recieve_conn_reqs(port string) {
+func recieve_conn_reqs(port_ string) {
+	number := 1
 	for i := 0; i < total_conns/2; i++ {
+		port_int, _ := strconv.Atoi(port_)
+		port_int = port_int + number
+		port := strconv.Itoa(port_int)
 		go recieve_req(port)
+		number++
 	}
 	wg.Wait()
 }
