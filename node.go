@@ -579,7 +579,10 @@ func deliver_messages() {
 		message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
 
 		if message_to_deliver.Final_priority > 0 {
-			// print("final priority greater than 0...\n\n\n\n\n\n\n\n\n")
+			print("final priority greater than 0...\n\n\n\n\n\n\n\n\n")
+			// Update processing time
+			update_processing_times(message_id_to_deliver)
+
 			time.Sleep(5 * time.Millisecond)
 			// Update bank
 			process_message_data(message_to_deliver)
@@ -593,8 +596,6 @@ func deliver_messages() {
 			pq.pq.Pop()
 			pq.mutex.Unlock()
 
-			// Update processing time
-			update_processing_times(message_id_to_deliver)
 		}
 	}
 }

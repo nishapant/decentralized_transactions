@@ -2,16 +2,17 @@ import matplotlib.pyplot as plt
 import math 
 import numpy as np
 
-data1 = [1, 2, 3, 4, 5, 1, 4, 3, 6, 7, 8, 9, 10, 1, 5, 6, 1, 1, 2, 1, 4]
-data2 = [1, 2, 3, 4, 5, 1, 4, 3, 6, 7, 8, 9, 10, 1]
-data3 = []
-data4 = []
-data5 = []
-data6 = []
-data7 = []
-data8 = []
+# data1 = [1, 2, 3, 4, 5, 1, 4, 3, 6, 7, 8, 9, 10, 1, 5, 6, 1, 1, 2, 1, 4]
+# data2 = [1, 2, 3, 4, 5, 1, 4, 3, 6, 7, 8, 9, 10, 1]
+# data3 = []
+# data4 = []
+# data5 = []
+# data6 = []
+# data7 = []
+# data8 = []
 
-total_data = data + data1
+
+total_data = []
 
 # CDF Plotting
 data_sorted = np.sort(total_data)
