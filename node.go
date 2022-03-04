@@ -233,12 +233,16 @@ func create_queues() {
 
 // Iterate through all the nodes that arent ourselves and establish a connection as client
 func send_conn_reqs(self_name string) {
+	number := 0
 	for name, info := range node_info_map {
 		if name != self_name {
 			host := info.host_name
-			port := info.port_num
+			port_int, _ := strconv.Atoi(info.port_num)
+			port_int = port_int + number
+			port := strconv.Itoa(port_int)
 			go send_req(host, port, name)
 		}
+		number++
 	}
 	wg.Wait()
 }
@@ -250,7 +254,7 @@ func send_req(host string, port string, name string) {
 	var conn net.Conn
 
 	for conn == nil {
-		ip := host + ":" + "0"
+		ip := host + ":" + port
 		conn, err := net.Dial("tcp", ip)
 
 		if err != nil {
@@ -264,16 +268,13 @@ func send_req(host string, port string, name string) {
 }
 
 func recieve_conn_reqs(port string) {
-	// print("recieive conn req\n")
 	for i := 0; i < total_conns/2; i++ {
-		// print("in receive conn req for loop \n")
 		go recieve_req(port)
 	}
 	wg.Wait()
 }
 
 func recieve_req(port string) {
-	// print("recieving...\n")
 	// Listen for incoming connections
 	serv_port := ":" + port
 	ln, err := net.Listen("tcp", serv_port)
@@ -494,7 +495,6 @@ func add_transactions_to_queues(self_name string) {
 		counter.counter++
 		counter.mutex.Unlock()
 
-		// print("pushing to priqueue\n")
 		pq.mutex.Lock()
 		pq.pq.Push(&h)
 		pq.mutex.Unlock()
