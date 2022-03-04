@@ -195,9 +195,7 @@ func create_node_data(content []string) {
 		node_id_to_name[i] = node_name
 
 		if node_name == self_node_name {
-			// print("declaring self node id:", node_id, "\n")
 			self_node_id = node_id
-			// print("set node id to:", self_node_id, "\n")
 		}
 
 		ip_addr_net, _ := net.LookupIP(node_info[1])
@@ -275,23 +273,25 @@ func send_req(host string, port string, name string) {
 }
 
 func recieve_conn_reqs(port string) {
-	// for name, info := range node_info_map {
-	// 	if name != self_name {
-	// 		port := info.port_num
-	// 		go recieve_req(port)
-	// 	}
-	// }
-	number := 1
-	for i := 0; i < total_nodes-1; i++ {
-		print("reciving conwaefwef\n")
-		port_int, _ := strconv.Atoi(port)
-		port_int = port_int + number
-		port := strconv.Itoa(port_int)
-		go recieve_req(port)
-		number += 1
+	for name, info := range node_info_map {
+		if name != self_node_name {
+			port_int, _ := strconv.Atoi(port)
+			port := port_int + info.node_id
+			port2 := strconv.Itoa(port)
+			go recieve_req(port2)
+		}
 	}
+	// number := 1
+	// for i := 0; i < total_nodes-1; i++ {
+	// 	print("reciving conwaefwef\n")
+	// 	port_int, _ := strconv.Atoi(port)
+	// 	port_int = port_int + number
+	// 	port := strconv.Itoa(port_int)
+	// 	go recieve_req(port)
+	// 	number += 1
+	// }
 
-	wg.Wait()
+	// wg.Wait()
 }
 
 func recieve_req(port string) {
