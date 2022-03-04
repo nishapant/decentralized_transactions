@@ -588,6 +588,7 @@ func handle_sending_transactions(conn net.Conn, node_name string) {
 
 func deliver_messages() {
 	// Check pq to see if it has something in it
+	pq.mutex.Lock()
 	if len(pq.pq) != 0 {
 		// print("len pq is not 0", len(pq.pq), "\n\n\n\n\n\n")
 
@@ -605,12 +606,11 @@ func deliver_messages() {
 			process_message_data(message_to_deliver)
 
 			// Update priqueue
-			pq.mutex.Lock()
 			pq.pq.Pop()
-			pq.mutex.Unlock()
-
 		}
 	}
+	pq.mutex.Unlock()
+
 }
 
 func update_processing_times(message_id string) {
