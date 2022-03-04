@@ -1,4 +1,5 @@
-3
+4
 node1 sp22-cs425-g70-01.cs.illinois.edu 3000
 node2 sp22-cs425-g70-02.cs.illinois.edu 2000
 node3 sp22-cs425-g70-03.cs.illinois.edu 6000
+node4 sp22-cs425-g70-05.cs.illinois.edu 4000
