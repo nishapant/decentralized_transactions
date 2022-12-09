@@ -200,9 +200,6 @@ func create_node_data(content []string) {
 
 		ip_addr_net, _ := net.LookupIP(node_info[1])
 		ip_addr := ip_addr_net[0].String()
-		// port_int, _ := strconv.Atoi(node_info[2])
-		// port_int = port_int
-		// port := strconv.Itoa(port_int)
 
 		new_node := node{
 			node_name: node_name,
@@ -254,7 +251,6 @@ func send_conn_reqs(self_name string) {
 // sends a request to establish connection
 // Use preexisting thread to handle new connection
 func send_req(host string, port string, name string) {
-	// print("sending req \n")
 	var conn net.Conn
 
 	for conn == nil {
@@ -264,7 +260,6 @@ func send_req(host string, port string, name string) {
 		if err != nil {
 			continue
 		} else {
-			// print("sending...\n")
 			wait_for_connections(conn, name, false)
 			break
 		}
@@ -281,17 +276,6 @@ func recieve_conn_reqs(port string) {
 			go recieve_req(port2)
 		}
 	}
-	// number := 1
-	// for i := 0; i < total_nodes-1; i++ {
-	// 	print("reciving conwaefwef\n")
-	// 	port_int, _ := strconv.Atoi(port)
-	// 	port_int = port_int + number
-	// 	port := strconv.Itoa(port_int)
-	// 	go recieve_req(port)
-	// 	number += 1
-	// }
-
-	// wg.Wait()
 }
 
 func recieve_req(port string) {
@@ -324,7 +308,6 @@ func recieve_req(port string) {
 }
 
 func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
-	// print("waiting\n")
 	// easiest thing to do: keep two connections between two nodes -> one for listening, other for writing
 	// Increment current number of connections
 	curr_conns.mutex.Lock()
@@ -334,9 +317,6 @@ func wait_for_connections(conn net.Conn, node_name string, receiving bool) {
 	for curr_conns.curr_conns < total_conns {
 		time.Sleep(20 * time.Millisecond)
 	}
-
-	// sec := 5
-	// print("Found all connections. Sleeping for + " + strconv.Itoa(sec) + "seconds...\n")
 
 	// Sleep for a few seconds - make sure all the other nodes have established connections
 	time.Sleep(5 * time.Second)
@@ -360,8 +340,6 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 		if incoming == "" {
 			continue
 		}
-
-		// print("Message Received:", string(incoming))
 
 		new_message := str_to_message(incoming)
 		incoming_message_id := new_message.Message_id
@@ -458,7 +436,6 @@ func handle_receiving_transactions(conn net.Conn, node_name string) {
 			}
 		}
 
-		// print("Message recieved after update:", message_to_str(old_message), "\n")
 		message_info_map.mutex.Lock()
 		message_info_map.message_info_map[incoming_message_id] = old_message
 		message_info_map.mutex.Unlock()
@@ -528,13 +505,11 @@ func unicast_msg(msg message, node_dest string) {
 	// Put on jobqueue
 	job_queues[node_dest].mutex.Lock()
 
-	// print("before appending\n")
 	job_queue_at_node := job_queues[node_dest]
 	job_queue_at_node.job_queue = append(job_queues[node_dest].job_queue, msg)
 	job_queues[node_dest] = job_queue_at_node
 	job_queues[node_dest].mutex.Unlock()
 
-	// print("signaling\n")
 	// Signal to wake up that thread
 	job_queues[node_dest].cond.Signal()
 
@@ -590,14 +565,10 @@ func deliver_messages() {
 	// Check pq to see if it has something in it
 	pq.mutex.Lock()
 	if len(pq.pq) != 0 {
-		// print("len pq is not 0", len(pq.pq), "\n\n\n\n\n\n")
-
 		message_id_to_deliver := pq.pq.Peek().message_id
-		// print("messageid: ", message_id_to_deliver, "\n")
 		message_to_deliver := message_info_map.message_info_map[message_id_to_deliver]
 
 		if message_to_deliver.Final_priority > 0 {
-			// print("final priority greater than 0...\n\n\n\n\n\n\n\n\n")
 			// Update processing time
 			update_processing_times(message_id_to_deliver)
 
@@ -614,15 +585,12 @@ func deliver_messages() {
 }
 
 func update_processing_times(message_id string) {
-	// print("in update proc times..\n")
-	// print(proc_time_map.proc_time)
 	proc_time_map.mutex.Lock()
 	start_time := proc_time_map.proc_time_start[message_id]
 	end_time := time.Now().Unix()
 	diff := end_time - start_time
 	proc_time_map.proc_time = append(proc_time_map.proc_time, diff)
 	if len(proc_time_map.proc_time)%50 == 0 {
-		// print(proc_time_map.proc_time)
 		print(strings.Trim(strings.Join(strings.Fields(fmt.Sprint(proc_time_map.proc_time)), ","), "[]"))
 
 	}
@@ -708,7 +676,6 @@ func print_balances() {
 		}
 	}
 
-	// balances += "\n"
 	bank.mutex.Unlock()
 
 	fmt.Println(balances)
@@ -743,21 +710,19 @@ func message_to_str(m message) string {
 
 func str_to_message(m_str string) message {
 	var m message
-	// print("hi\n")
-	// print(m_str)
-	// print("\n")
+
 	err := json.Unmarshal([]byte(m_str), &m)
 	if err != nil {
 		print("Unmarshaling does not work...")
 	}
 
-	// print(m.Message_id)
-	// print("\n")
 	return m
 }
 
 func random_hash() string {
-	num_arr := []byte{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
+	num_arr := []byte{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+		'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2',
+		'3', '4', '5', '6', '7', '8', '9', '0'}
 	hash := ""
 	rand.Seed(time.Now().UnixNano())
 	for i := 0; i <= 64; i++ {
@@ -784,9 +749,6 @@ func handle_err(err error) {
 		os.Exit(1)
 	}
 }
-
-////// PRIORITY QUEUE DEFINITION //////
-// https://pkg.go.dev/container/heap#example-package-PriorityQueue
 
 func (pq PriorityQueue) Len() int { return len(pq) }
 
